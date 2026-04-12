@@ -121,7 +121,7 @@ const EditProfileModal = ({ user, onClose, onSave }) => {
         
         {/* Header */}
         <div style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
           padding: '1.5rem',
           position: 'relative',
           borderTopLeftRadius: '1rem',
@@ -154,7 +154,7 @@ const EditProfileModal = ({ user, onClose, onSave }) => {
                 width: '100px',
                 height: '100px',
                 borderRadius: '50%',
-                background: photoPreview ? `url(${photoPreview}) center/cover` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                background: photoPreview ? `url(${photoPreview}) center/cover` : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

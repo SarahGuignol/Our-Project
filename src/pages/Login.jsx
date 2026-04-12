@@ -132,7 +132,7 @@ const Login = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
     }}>
       {/* Navigation Bar */}
       <nav style={{
@@ -154,7 +154,7 @@ const Login = () => {
             alignItems: 'center',
             justifyContent: 'center'
           }}>
-            <Code2 size={20} color="#667eea" />
+            <Code2 size={20} color="#3b82f6" />
           </div>
           <span style={{ color: 'white', fontWeight: '600', fontSize: '1.125rem' }}>CodeLearn</span>
         </Link>

@@ -75,7 +75,7 @@ const Navbar = () => {
             <div style={{
               width: '2rem',
               height: '2rem',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
               borderRadius: '0.5rem',
               display: 'flex',
               alignItems: 'center',
@@ -147,7 +147,7 @@ const Navbar = () => {
               <div style={{
                 width: '2rem',
                 height: '2rem',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                 borderRadius: '9999px',
                 display: 'flex',
                 alignItems: 'center',
