@@ -132,7 +132,7 @@ const Login = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+      background: 'linear-gradient(135deg, #3b82f6 0%, #ffffff 100%)',
     }}>
       {/* Navigation Bar */}
       <nav style={{
