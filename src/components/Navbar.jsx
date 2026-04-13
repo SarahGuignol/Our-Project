@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Code2, LogOut, User, Home, BookOpen, BarChart3, Menu, X, Settings } from 'lucide-react';
+import { Code2, LogOut, User, Home, BookOpen, BarChart3, Menu, X } from 'lucide-react';
 import ProfileModal from './ProfileModal';
 import EditProfileModal from './EditProfileModal';
 
@@ -24,16 +24,9 @@ const Navbar = () => {
   };
 
   const handleSaveProfile = (updatedData) => {
-    console.log("Saving profile data:", updatedData);
-    console.log("Photo data:", updatedData.photo ? "Photo present" : "No photo");
     updateProfile(updatedData);
-    setTimeout(() => {
-    const savedUser = localStorage.getItem('user');
-    console.log("Saved user:", JSON.parse(savedUser));
-  }, 100);
   };
 
-  // Ne pas afficher la navbar sur la landing page et login
   if (!user || location.pathname === '/' || location.pathname === '/login') {
     return null;
   }
@@ -48,6 +41,7 @@ const Navbar = () => {
     { path: '/student/history', label: 'History', icon: BookOpen },
   ] : [
     { path: '/teacher/dashboard', label: 'Dashboard', icon: Home },
+      { path: '/teacher/push-code', label: 'Push Code', icon: Code2 }, 
     { path: '/teacher/exercises', label: 'Exercises', icon: BookOpen },
     { path: '/teacher/analytics', label: 'Analytics', icon: BarChart3 },
   ];
@@ -64,10 +58,11 @@ const Navbar = () => {
         <div style={{
           maxWidth: '1280px',
           margin: '0 auto',
-          padding: '0.75rem 2rem',
+          padding: '0.75rem 1rem',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
         }}>
           {/* Logo */}
           <Link to={user?.role === 'student' ? '/student/dashboard' : '/teacher/dashboard'} 
@@ -88,11 +83,11 @@ const Navbar = () => {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div style={{ 
+          {/* Liens desktop - cachés sur mobile avec CSS */}
+          <div className="desktop-nav" style={{ 
             display: 'flex', 
             alignItems: 'center', 
-            gap: '1rem'
+            gap: '0.5rem',
           }}>
             {navLinks.map((link) => (
               <Link
@@ -102,47 +97,32 @@ const Navbar = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  padding: '0.5rem 1rem',
+                  padding: '0.5rem 0.75rem',
                   borderRadius: '0.5rem',
                   textDecoration: 'none',
                   color: isActive(link.path) ? '#3b82f6' : '#4b5563',
                   background: isActive(link.path) ? '#eff6ff' : 'transparent',
                   fontWeight: isActive(link.path) ? '500' : '400',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive(link.path)) {
-                    e.currentTarget.style.background = '#f3f4f6';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive(link.path)) {
-                    e.currentTarget.style.background = 'transparent';
-                  }
                 }}
               >
                 <link.icon size={18} />
-                {link.label}
+                <span>{link.label}</span>
               </Link>
             ))}
           </div>
 
-          {/* User Info & Logout - RENDU CLIQUABLE */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            {/* Profile section - CLICKABLE */}
+          {/* Section utilisateur desktop */}
+          <div className="desktop-user" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <div 
               onClick={() => setShowProfileModal(true)}
               style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
-                gap: '0.75rem',
+                gap: '0.5rem',
                 cursor: 'pointer',
                 padding: '0.5rem',
                 borderRadius: '0.5rem',
-                transition: 'background 0.2s'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
             >
               <div style={{
                 width: '2rem',
@@ -155,7 +135,7 @@ const Navbar = () => {
               }}>
                 <User size={16} color="white" />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div>
                 <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#1f2937' }}>
                   {user?.name}
                 </span>
@@ -165,8 +145,8 @@ const Navbar = () => {
                   color: user?.role === 'teacher' ? '#1e40af' : '#166534',
                   padding: '0.125rem 0.5rem',
                   borderRadius: '9999px',
+                  display: 'block',
                   textAlign: 'center',
-                  marginTop: '0.125rem'
                 }}>
                   {user?.role === 'teacher' ? 'Teacher' : 'Student'}
                 </span>
@@ -179,35 +159,28 @@ const Navbar = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                padding: '0.5rem 1rem',
+                padding: '0.5rem 0.75rem',
                 background: '#ef4444',
                 color: 'white',
                 border: 'none',
                 borderRadius: '0.5rem',
                 cursor: 'pointer',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-                transition: 'all 0.2s'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#dc2626'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#ef4444'}
             >
               <LogOut size={16} />
               <span>Logout</span>
             </button>
 
-            {/* Mobile menu button */}
+            {/* Bouton menu mobile */}
             <button
+              className="mobile-menu-btn"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               style={{
-                display: 'none',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
                 padding: '0.5rem',
-                '@media (max-width: 768px)': {
-                  display: 'block'
-                }
+                display: 'none',
               }}
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -216,9 +189,9 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Mobile Navigation Menu */}
+      {/* Menu mobile */}
       {mobileMenuOpen && (
-        <div style={{
+        <div className="mobile-menu" style={{
           position: 'fixed',
           top: '4rem',
           left: 0,
@@ -226,7 +199,7 @@ const Navbar = () => {
           background: 'white',
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
           zIndex: 49,
-          padding: '1rem'
+          padding: '1rem',
         }}>
           {navLinks.map((link) => (
             <Link
@@ -241,18 +214,53 @@ const Navbar = () => {
                 borderRadius: '0.5rem',
                 textDecoration: 'none',
                 color: isActive(link.path) ? '#3b82f6' : '#4b5563',
-                background: isActive(link.path) ? '#eff6ff' : 'transparent',
-                marginBottom: '0.5rem'
+                marginBottom: '0.5rem',
               }}
             >
               <link.icon size={20} />
               {link.label}
             </Link>
           ))}
+          <hr style={{ margin: '0.5rem 0' }} />
+          <div style={{ padding: '0.5rem 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+              <div style={{
+                width: '2rem',
+                height: '2rem',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                borderRadius: '9999px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <User size={16} color="white" />
+              </div>
+              <div>
+                <div style={{ fontWeight: '500' }}>{user?.name}</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                  {user?.role === 'teacher' ? 'Teacher' : 'Student'}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                background: '#ef4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                cursor: 'pointer',
+              }}
+            >
+              Logout
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Profile Modal */}
+      {/* Modals */}
       {showProfileModal && (
         <ProfileModal 
           user={user}
@@ -261,7 +269,6 @@ const Navbar = () => {
         />
       )}
 
-      {/* Edit Profile Modal */}
       {showEditModal && (
         <EditProfileModal
           user={user}

@@ -84,7 +84,14 @@ const Home = () => {
             marginBottom: '1.5rem'
           }}>
             Master Algorithms with
-            <span style={{ color: '#3b82f6' }}> AI-Powered Debugging</span>
+            <span style={{
+              background: 'linear-gradient(135deg, #0061fd, #10b981)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              color: 'transparent'
+            }}>
+              {' '}AI-Powered Debugging
+            </span>          
           </h1>
           <p style={{
             fontSize: '1.25rem',

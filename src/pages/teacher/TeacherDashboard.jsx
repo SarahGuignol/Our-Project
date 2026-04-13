@@ -27,8 +27,14 @@ const TeacherDashboard = () => {
 
   const totalStudents = classes.reduce((sum, c) => sum + c.students, 0);
   const totalExercises = classes.reduce((sum, c) => sum + c.exercises.length, 0);
-  const avgCompletion = 68; // Mock percentage
-
+  const avgCompletion = Math.round(
+        classes.reduce((sum, c) => {
+          // For each class, calculate the ratio of total submissions to total possible submissions
+          const classSubmissions = c.exercises.reduce((s, e) => s + e.submissions, 0);
+          const classTotal = c.exercises.length * c.students;
+          return sum + (classSubmissions / classTotal) * 100;
+        }, 0) / classes.length // Divide by number of classes to get the average
+      );
   return (
     <div className="container" style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>

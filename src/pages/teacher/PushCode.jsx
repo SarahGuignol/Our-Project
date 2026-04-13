@@ -4,7 +4,7 @@ import CodeEditor from '../../components/CodeEditor';
 import OutputPanel from '../../components/OutputPanel';
 import { executePseudocode, analyzeComplexity, getAIHelp } from '../../utils/pseudocodeParser';
 
-const CodingScreen = () => {
+const PushCode = () => {
   const { mode, id } = useParams();
   const navigate = useNavigate();
   const [code, setCode] = useState('');
@@ -128,4 +128,4 @@ const CodingScreen = () => {
   );
 };
 
-export default CodingScreen;
+export default PushCode;
