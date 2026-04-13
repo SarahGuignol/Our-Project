@@ -41,7 +41,7 @@ const ProfileModal = ({ user, onClose, onEdit }) => {
         
         {/* Header */}
         <div style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
           padding: '2rem',
           textAlign: 'center',
           position: 'relative',
@@ -76,7 +76,7 @@ const ProfileModal = ({ user, onClose, onEdit }) => {
             justifyContent: 'center',
             fontSize: '2rem',
             fontWeight: 'bold',
-            color: '#667eea'
+            color: '#3b82f6'
           }}>
             {!user?.photo && user.name.charAt(0)}
           </div>

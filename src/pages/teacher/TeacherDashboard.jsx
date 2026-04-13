@@ -46,20 +46,14 @@ const TeacherDashboard = () => {
 
   // Calculate total exercises across all classes by summing each class's exercises array length
   const totalExercises = classes.reduce((sum, c) => sum + c.exercises.length, 0);
-
-  // Hardcoded average completion percentage (would normally be computed from real submission data)
-  //Dynamic average completion based on real submissions data
   const avgCompletion = Math.round(
-    classes.reduce((sum, c) => {
-      // For each class, calculate the ratio of total submissions to total possible submissions
-      const classSubmissions = c.exercises.reduce((s, e) => s + e.submissions, 0);
-      const classTotal = c.exercises.length * c.students;
-      return sum + (classSubmissions / classTotal) * 100;
-    }, 0) / classes.length // Divide by number of classes to get the average
-  );
-
-
-  // ─── JSX / RENDER ────────────────────────────────────────────────────────────
+        classes.reduce((sum, c) => {
+          // For each class, calculate the ratio of total submissions to total possible submissions
+          const classSubmissions = c.exercises.reduce((s, e) => s + e.submissions, 0);
+          const classTotal = c.exercises.length * c.students;
+          return sum + (classSubmissions / classTotal) * 100;
+        }, 0) / classes.length // Divide by number of classes to get the average
+      );
   return (
 
     // Main page container with padding

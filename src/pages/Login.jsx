@@ -193,7 +193,7 @@ const Login = () => {
     // Full-screen wrapper with a purple gradient background
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'linear-gradient(135deg, #3b82f6 0%, #ffffff 100%)',
     }}>
 
       {/* ── Navigation Bar ── */}
@@ -214,8 +214,7 @@ const Login = () => {
             background: 'white', borderRadius: '0.5rem',
             display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}>
-            {/* Code icon colored with the brand purple */}
-            <Code2 size={20} color="#667eea" />
+            <Code2 size={20} color="#3b82f6" />
           </div>
           <span style={{ color: 'white', fontWeight: '600', fontSize: '1.125rem' }}>CodeLearn</span>
         </Link>

@@ -76,7 +76,7 @@ const StudentDashboard = () => {
 
       {/* ── Welcome Banner ── */}
       <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Purple gradient
+        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
         borderRadius: '1rem',
         padding: '2rem',
         marginBottom: '2rem',

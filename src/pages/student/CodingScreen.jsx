@@ -42,8 +42,9 @@ const CodingScreen = () => {
 
   // State to track whether the exercise is currently being submitted (shows loading state)
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Boolean: true if the current mode is 'exercise', false if it's free coding mode
+  const [showOutput, setShowOutput] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  
   const isExercise = mode === 'exercise';
 
   // State to hold the exercise data — only populated if in exercise mode
@@ -92,8 +93,6 @@ const CodingScreen = () => {
 
     // Set submitting state to true to disable the button and show "Submitting..." text
     setIsSubmitting(true);
-
-    // Simulate an API submission call with a 1.5 second delay
     setTimeout(() => {
       alert('Exercise submitted successfully!'); // Notify the user of success
       setIsSubmitting(false);                    // Reset the submitting state
@@ -101,14 +100,27 @@ const CodingScreen = () => {
     }, 1500); // 1500 milliseconds = 1.5 seconds delay
   };
 
+  const toggleOutput = () => {
+    setShowOutput(!showOutput);
+  };
 
-  // ─── JSX / RENDER ────────────────────────────────────────────────────────────
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
 
   return (
-    // Main container — height fills the viewport minus the 64px top navbar
-    <div style={{ height: 'calc(100vh - 64px)', padding: '1rem' }}>
-
-      {/* Exercise header card — only rendered when in exercise mode and exercise data exists */}
+    <div style={{ 
+      height: 'calc(100vh - 64px)', 
+      padding: '1rem',
+      position: isFullscreen ? 'fixed' : 'relative',
+      top: isFullscreen ? 0 : 'auto',
+      left: isFullscreen ? 0 : 'auto',
+      right: isFullscreen ? 0 : 'auto',
+      bottom: isFullscreen ? 0 : 'auto',
+      zIndex: isFullscreen ? 1000 : 'auto',
+      background: isFullscreen ? '#f5f7fa' : 'transparent'
+    }}>
+      {/* Header avec titre */}
       {isExercise && exercise && (
         <div className="card" style={{ marginBottom: '1rem' }}>
           {/* Exercise title */}
@@ -120,30 +132,36 @@ const CodingScreen = () => {
         </div>
       )}
 
-      {/* Two-column grid layout: CodeEditor on the left, OutputPanel on the right */}
+      {/* Layout */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr', // Two equal-width columns
+        gridTemplateColumns: showOutput ? '1fr 1fr' : '1fr',
         gap: '1rem',
-        height: 'calc(100% - 100px)', // Fill remaining height minus header card and submit button area
+        height: 'calc(100% - 100px)',
+        transition: 'all 0.3s ease'
       }}>
-
-        {/* Left panel: the code editor where the user writes pseudocode */}
-        {/* - code: current code value */}
-        {/* - setCode: function to update the code state on every edit */}
-        {/* - onRun: function called when the user clicks Run inside the editor */}
-        <CodeEditor code={code} setCode={setCode} onRun={handleRunCode} />
-
-        {/* Right panel: displays execution output, complexity, AI help, and variable tracking */}
-        <OutputPanel
-          output={output}         // The text result from running the code
-          complexity={complexity} // The complexity analysis string (e.g. "O(n)")
-          aiHelp={aiHelp}         // AI-generated suggestions and feedback
-          variables={variables}   // List of variables tracked during execution
+        <CodeEditor 
+          code={code} 
+          setCode={setCode} 
+          onRun={handleRunCode}
+          onToggleOutput={toggleOutput}
+          showOutput={showOutput}
+          onToggleFullscreen={toggleFullscreen}
+          isFullscreen={isFullscreen}
         />
+        
+        {showOutput && (
+          <OutputPanel
+            output={output}
+            complexity={complexity}
+            aiHelp={aiHelp}
+            variables={variables}
+          />
+        )}
       </div>
 
       {/* Submit button row — only shown when in exercise mode */}
+      {/* Submit button */}
       {isExercise && (
         <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
           <button

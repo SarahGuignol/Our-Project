@@ -87,7 +87,9 @@ body {
 
 /* Secondary button hover effect */
 .btn-secondary:hover {
-  background-color: #d1d5db; /* Slightly darker gray on hover */
+
+  background-color: #d1d5db;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
 }
 
 /* Reusable card container style */
@@ -102,8 +104,7 @@ body {
 
 /* Full-page landing section with gradient background */
 .landing-container {
-  min-height: 100vh; /* Fill at least the full viewport height */
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); /* Diagonal blue gradient */
+  min-height: 100vh;
 }
 
 /* Sticky top navigation bar for the landing page */
@@ -177,14 +178,15 @@ body {
 
 /* Primary call-to-action button on the landing page */
 .btn-primary-landing {
-  background: white;         /* White background to stand out on the blue navbar */
-  color: #2563eb;            /* Blue text matching the page theme */
-  padding: 0.5rem 1rem;      /* Inner spacing */
-  border: none;              /* No border */
-  border-radius: 0.5rem;     /* Rounded corners */
-  font-weight: 500;          /* Medium weight */
-  cursor: pointer;           /* Hand cursor */
-  transition: all 0.2s;      /* Smooth hover transitions */
+
+  background: white;
+  color: #3b82f6;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 /* Lift and shadow effect on hover */
@@ -498,6 +500,35 @@ button, a {
 
 /* Scale up and highlight profile on hover */
 .profile-clickable:hover {
-  background: #f3f4f6;     /* Light gray background on hover */
-  transform: scale(1.02);  /* Slightly enlarge the element */
+  background: #f3f4f6;
+  transform: scale(1.02);
+}
+
+/* Styles pour la navbar responsive */
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  
+  .desktop-user > div:first-child {
+    display: none !important;
+  }
+  
+  .desktop-user > button:first-of-type {
+    display: none !important;
+  }
+  
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-menu-btn {
+    display: none !important;
+  }
+  
+  .mobile-menu {
+    display: none !important;
+  }
 }

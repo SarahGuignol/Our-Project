@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 // Import icons from lucide-react:
 // - Save: for the "Create Exercise" button inside the modal
 // - X: for the close button of the modal
-import { Save, X } from 'lucide-react';
+import { Save, X, Edit2, Trash2, Eye } from 'lucide-react';
 
 // Define the ExerciseManager functional component
 const ExerciseManager = () => {
@@ -18,16 +18,14 @@ const ExerciseManager = () => {
   // State holding the list of existing exercises
   // Each exercise has: id, title, dueDate, and submissions count
   const [exercises, setExercises] = useState([
-    { id: 1, title: 'Find Maximum Number', dueDate: '2024-01-20', submissions: 20 },
-    { id: 2, title: 'Calculate Factorial',  dueDate: '2024-01-25', submissions: 18 },
+    { id: 1, title: 'Find Maximum Number', dueDate: '2024-01-20', submissions: 20, description: 'Find the max number in an array', starterCode: 'function findMax(numbers):\n    # Your code here' },
+    { id: 2, title: 'Calculate Factorial', dueDate: '2024-01-25', submissions: 18, description: 'Calculate factorial of a number', starterCode: 'function factorial(n):\n    # Your code here' },
   ]);
 
   // State controlling whether the "Create Exercise" modal is visible or hidden
   // false = modal hidden, true = modal visible
   const [showForm, setShowForm] = useState(false);
-
-  // State holding the form fields for the new exercise being created
-  // All fields start empty — filled in by the teacher through the modal form
+  const [editingExercise, setEditingExercise] = useState(null);
   const [newExercise, setNewExercise] = useState({
     title: '',        // Exercise title (required)
     description: '',  // Exercise instructions for students (required)
@@ -63,7 +61,46 @@ const ExerciseManager = () => {
     setNewExercise({ title: '', description: '', dueDate: '', starterCode: '', solution: '' });
 
     // Notify the teacher that the exercise was created successfully
-    alert('Exercise created successfully!');
+    alert('✅ Exercise created successfully!');
+  };
+
+  const handleEditExercise = (exercise) => {
+    setEditingExercise(exercise);
+    setNewExercise({
+      title: exercise.title,
+      description: exercise.description || '',
+      dueDate: exercise.dueDate,
+      starterCode: exercise.starterCode || '',
+      solution: exercise.solution || '',
+    });
+    setShowForm(true);
+  };
+
+  const handleUpdateExercise = () => {
+    const updatedExercises = exercises.map(ex => 
+      ex.id === editingExercise.id 
+        ? { ...ex, ...newExercise }
+        : ex
+    );
+    setExercises(updatedExercises);
+    setShowForm(false);
+    setEditingExercise(null);
+    setNewExercise({ title: '', description: '', dueDate: '', starterCode: '', solution: '' });
+    alert('✅ Exercise updated successfully!');
+  };
+
+  const handleDeleteExercise = (id) => {
+    if (window.confirm('Are you sure you want to delete this exercise? This action cannot be undone.')) {
+      const filteredExercises = exercises.filter(ex => ex.id !== id);
+      setExercises(filteredExercises);
+      alert('🗑️ Exercise deleted successfully!');
+    }
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingExercise(null);
+    setNewExercise({ title: '', description: '', dueDate: '', starterCode: '', solution: '' });
   };
 
 
@@ -86,6 +123,7 @@ const ExerciseManager = () => {
         <button
           onClick={() => setShowForm(true)}
           className="btn-primary"
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
         >
           + New Exercise
         </button>
@@ -113,10 +151,7 @@ const ExerciseManager = () => {
               {/* Loop over the exercises array and render one row per exercise */}
               {exercises.map(exercise => (
                 <tr key={exercise.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  {/* Exercise title */}
-                  <td style={{ padding: '0.75rem' }}>{exercise.title}</td>
-
-                  {/* Due date */}
+                  <td style={{ padding: '0.75rem', fontWeight: '500' }}>{exercise.title}</td>
                   <td style={{ padding: '0.75rem' }}>{exercise.dueDate}</td>
 
                   {/* Number of submissions received for this exercise */}
@@ -124,24 +159,72 @@ const ExerciseManager = () => {
 
                   {/* Action cell: button to navigate to the submissions review page */}
                   <td style={{ padding: '0.75rem' }}>
-                    <button
-                      // Navigate to the review page passing the exercise ID in the URL
-                      onClick={() => navigate(`/teacher/submissions/${exercise.id}`)}
-                      className="btn-secondary"
-                      style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }}
-                    >
-                      View Submissions
-                    </button>
-                  </td>
-                </tr>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      {/* Bouton View Submissions */}
+                      <button
+                        onClick={() => navigate(`/teacher/submissions/${exercise.id}`)}
+                        className="btn-secondary"
+                        style={{ 
+                          padding: '0.25rem 0.75rem', 
+                          fontSize: '0.875rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem'
+                        }}
+                        title="View Submissions"
+                      >
+                        <Eye size={14} /> View
+                      </button>
+                      
+                      {/* Bouton Edit */}
+                      <button
+                        onClick={() => handleEditExercise(exercise)}
+                        style={{
+                          background: '#f59e0b',
+                          color: 'white',
+                          border: 'none',
+                          padding: '0.25rem 0.75rem',
+                          borderRadius: '0.375rem',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem'
+                        }}
+                        title="Edit Exercise"
+                      >
+                        <Edit2 size={14} /> Edit
+                      </button>
+                      
+                      {/* Bouton Delete */}
+                      <button
+                        onClick={() => handleDeleteExercise(exercise.id)}
+                        style={{
+                          background: '#ef4444',
+                          color: 'white',
+                          border: 'none',
+                          padding: '0.25rem 0.75rem',
+                          borderRadius: '0.375rem',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem'
+                        }}
+                        title="Delete Exercise"
+                      >
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    </div>
+                   </td>
+                 </tr>
               ))}
             </tbody>
-          </table>
+           </table>
         </div>
       </div>
 
-      {/* ── Create Exercise Modal ── */}
-      {/* Only rendered when showForm is true */}
+      {/* Create/Edit Exercise Modal */}
       {showForm && (
 
         // Dark semi-transparent overlay covering the full screen behind the modal
@@ -168,13 +251,10 @@ const ExerciseManager = () => {
 
             {/* ── Modal Header: title + close button ── */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Create New Exercise</h2>
-
-              {/* X button to close the modal by setting showForm to false */}
-              <button
-                onClick={() => setShowForm(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-              >
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
+                {editingExercise ? 'Edit Exercise' : 'Create New Exercise'}
+              </h2>
+              <button onClick={handleCancel} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
                 <X size={24} />
               </button>
             </div>
@@ -255,18 +335,14 @@ const ExerciseManager = () => {
 
               {/* ── Modal Action Buttons ── */}
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-
-                {/* Cancel button — closes the modal without saving */}
-                <button onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>
-
-                {/* Create button — calls handleCreateExercise to save the new exercise */}
-                <button
-                  onClick={handleCreateExercise}
-                  className="btn-primary"
+                <button onClick={handleCancel} className="btn-secondary">Cancel</button>
+                <button 
+                  onClick={editingExercise ? handleUpdateExercise : handleCreateExercise} 
+                  className="btn-primary" 
                   style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
-                  {/* Save icon before the button label */}
-                  <Save size={20} /> Create Exercise
+                  <Save size={20} />
+                  {editingExercise ? 'Update Exercise' : 'Create Exercise'}
                 </button>
               </div>
             </div>
