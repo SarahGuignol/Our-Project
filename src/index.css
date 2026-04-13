@@ -1,455 +1,503 @@
+/* Import the Inter font from Google Fonts with weights 300, 400, 500, 600, 700 */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+/* Select every element on the page */
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+  margin: 0;         /* Remove default outer spacing from all elements */
+  padding: 0;        /* Remove default inner spacing from all elements */
+  box-sizing: border-box; /* Make padding and border included in element's total width/height */
 }
 
+/* Style the main body of the page */
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: #f5f7fa;
-  color: #1f2937;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; /* Use Inter font, with system fonts as fallbacks */
+  background-color: #f5f7fa; /* Set a light grayish-blue background color */
+  color: #1f2937;            /* Set default text color to dark gray */
 }
 
+/* Style the React root element */
 #root {
-  min-height: 100vh;
+  min-height: 100vh; /* Make the root element at least as tall as the full viewport */
 }
 
-/* Scrollbar styling */
+/* ── Scrollbar styling ── */
+
+/* Style the scrollbar track (the rail) */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 8px;  /* Set vertical scrollbar width */
+  height: 8px; /* Set horizontal scrollbar height */
 }
 
+/* Style the scrollbar track background */
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
+  background: #f1f1f1;   /* Light gray background for the scrollbar track */
+  border-radius: 4px;    /* Round the corners of the track */
 }
 
+/* Style the draggable scrollbar thumb */
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  background: #cbd5e1;   /* Medium gray color for the scrollbar thumb */
+  border-radius: 4px;    /* Round the corners of the thumb */
 }
 
+/* Style the scrollbar thumb on hover */
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #94a3b8;   /* Darken the thumb color when the user hovers over it */
 }
 
-/* Utility classes */
+/* ── Utility classes ── */
+
+/* Centered, max-width wrapper used as a layout container */
 .container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 1rem;
+  max-width: 1400px;  /* Limit the container to 1400px wide */
+  margin: 0 auto;     /* Center the container horizontally */
+  padding: 0 1rem;    /* Add horizontal padding on left and right */
 }
 
+/* Primary action button style */
 .btn-primary {
-  background-color: #3b82f6;
-  color: white;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
+  background-color: #3b82f6; /* Blue background */
+  color: white;              /* White text */
+  padding: 0.5rem 1rem;      /* Vertical and horizontal inner spacing */
+  border: none;              /* Remove default border */
+  border-radius: 0.5rem;     /* Round the corners */
+  font-weight: 500;          /* Medium font weight */
+  cursor: pointer;           /* Show hand cursor on hover */
+  transition: all 0.2s;      /* Animate all property changes over 0.2 seconds */
 }
 
+/* Primary button hover effect */
 .btn-primary:hover {
-  background-color: #2563eb;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  background-color: #2563eb;                        /* Darker blue on hover */
+  transform: translateY(-1px);                      /* Slightly lift the button upward */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);  /* Add a subtle shadow below */
 }
 
+/* Secondary (less prominent) button style */
 .btn-secondary {
-  background-color: #e5e7eb;
-  color: #374151;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
+  background-color: #e5e7eb; /* Light gray background */
+  color: #374151;            /* Dark gray text */
+  padding: 0.5rem 1rem;      /* Vertical and horizontal inner spacing */
+  border: none;              /* Remove default border */
+  border-radius: 0.5rem;     /* Round the corners */
+  font-weight: 500;          /* Medium font weight */
+  cursor: pointer;           /* Show hand cursor on hover */
+  transition: all 0.2s;      /* Animate all property changes over 0.2 seconds */
 }
 
+/* Secondary button hover effect */
 .btn-secondary:hover {
-  background-color: #d1d5db;
+  background-color: #d1d5db; /* Slightly darker gray on hover */
 }
 
+/* Reusable card container style */
 .card {
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
+  background: white;                              /* White background */
+  border-radius: 1rem;                            /* Rounded corners */
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);   /* Light shadow for depth */
+  padding: 1.5rem;                                /* Inner spacing on all sides */
 }
 
 /*----------------------------------------Home page styles--------------------------------------------*/
 
+/* Full-page landing section with gradient background */
 .landing-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  min-height: 100vh; /* Fill at least the full viewport height */
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); /* Diagonal blue gradient */
 }
 
+/* Sticky top navigation bar for the landing page */
 .landing-nav {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  position: sticky;
-  top: 0;
-  z-index: 50;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Subtle white bottom border */
+  background: rgba(255, 255, 255, 0.05);            /* Slightly transparent white background */
+  -webkit-backdrop-filter: blur(10px);                /* safari support */
+  backdrop-filter: blur(10px);                        /* Blur the content behind the navbar (glassmorphism) */
+  position: sticky;                                   /* Keep navbar fixed at the top when scrolling */
+  top: 0;                                             /* Stick to the very top of the viewport */
+  z-index: 50;                                        /* Render above most other elements */
 }
 
+/* Inner layout of the navbar */
 .nav-content {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 1rem 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  max-width: 1280px;          /* Limit navbar content width */
+  margin: 0 auto;             /* Center horizontally */
+  padding: 1rem 2rem;         /* Top/bottom and left/right padding */
+  display: flex;              /* Use flexbox layout */
+  align-items: center;        /* Vertically center children */
+  justify-content: space-between; /* Push logo to left and buttons to right */
 }
 
+/* Wrapper for the logo icon and text */
 .logo-container {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  display: flex;        /* Arrange icon and text side by side */
+  align-items: center;  /* Vertically align them */
+  gap: 0.5rem;          /* Space between icon and text */
 }
 
+/* The colored square icon next to the logo text */
 .logo-icon {
-  width: 2rem;
-  height: 2rem;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 2rem;          /* Fixed width */
+  height: 2rem;         /* Fixed height */
+  background: linear-gradient(135deg, #3b82f6, #2563eb); /* Blue gradient fill */
+  border-radius: 0.5rem; /* Rounded corners */
+  display: flex;         /* Use flexbox to center the icon inside */
+  align-items: center;   /* Vertically center content */
+  justify-content: center; /* Horizontally center content */
 }
 
+/* Logo brand name text */
 .logo-text {
-  font-weight: 600;
-  font-size: 1.125rem;
-  color: white;
+  font-weight: 600;      /* Semi-bold */
+  font-size: 1.125rem;   /* Slightly larger than default */
+  color: white;          /* White text to contrast with dark navbar */
 }
 
+/* Group of navigation buttons on the right side */
 .nav-buttons {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+  display: flex;        /* Arrange buttons in a row */
+  align-items: center;  /* Vertically align buttons */
+  gap: 1rem;            /* Space between each button */
 }
 
+/* Transparent ghost button used in the navbar */
 .btn-ghost {
-  background: transparent;
-  color: white;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
+  background: transparent; /* No background */
+  color: white;            /* White text */
+  padding: 0.5rem 1rem;    /* Inner spacing */
+  border: none;            /* No border */
+  border-radius: 0.5rem;   /* Rounded corners */
+  cursor: pointer;         /* Hand cursor */
+  transition: all 0.2s;    /* Smooth transition on state change */
 }
 
+/* Ghost button hover — add faint white background */
 .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1); /* Semi-transparent white background */
 }
 
+/* Primary call-to-action button on the landing page */
 .btn-primary-landing {
-  background: white;
-  color: #2563eb;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
+  background: white;         /* White background to stand out on the blue navbar */
+  color: #2563eb;            /* Blue text matching the page theme */
+  padding: 0.5rem 1rem;      /* Inner spacing */
+  border: none;              /* No border */
+  border-radius: 0.5rem;     /* Rounded corners */
+  font-weight: 500;          /* Medium weight */
+  cursor: pointer;           /* Hand cursor */
+  transition: all 0.2s;      /* Smooth hover transitions */
 }
 
+/* Lift and shadow effect on hover */
 .btn-primary-landing:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);                      /* Move button up slightly */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);      /* Add visible shadow below */
 }
 
+/* Outlined (transparent background) button for the landing page */
 .btn-outline-landing {
-  background: transparent;
-  color: white;
-  padding: 0.5rem 1rem;
-  border: 2px solid white;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
+  background: transparent;   /* No fill */
+  color: white;              /* White text */
+  padding: 0.5rem 1rem;      /* Inner spacing */
+  border: 2px solid white;   /* White border */
+  border-radius: 0.5rem;     /* Rounded corners */
+  font-weight: 500;          /* Medium weight */
+  cursor: pointer;           /* Hand cursor */
+  transition: all 0.2s;      /* Smooth hover transitions */
 }
 
+/* Hover — subtle fill and lift */
 .btn-outline-landing:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.1); /* Faint white fill */
+  transform: translateY(-2px);          /* Lift button slightly */
 }
 
+/* Modifier class to make any button larger */
 .btn-large {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;   /* More padding than default */
+  font-size: 1rem;           /* Standard readable font size */
+  display: inline-flex;      /* Allows aligning icon and text inline */
+  align-items: center;       /* Vertically center icon and text */
+  gap: 0.5rem;               /* Space between icon and label */
 }
 
+/* Main content area of the landing page */
 .landing-main {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 4rem 2rem;
+  max-width: 1280px;   /* Constrain content width */
+  margin: 0 auto;      /* Center horizontally */
+  padding: 4rem 2rem;  /* Large top/bottom padding, moderate sides */
 }
 
+/* Hero (top banner) section */
 .hero-section {
-  text-align: center;
-  margin-bottom: 5rem;
+  text-align: center;   /* Center all text and inline elements */
+  margin-bottom: 5rem;  /* Large space below before the next section */
 }
 
+/* Large heading in the hero section */
 .hero-title {
-  font-size: 3rem;
-  font-weight: bold;
-  color: white;
-  margin-bottom: 1.5rem;
-  line-height: 1.2;
+  font-size: 3rem;       /* Large font on small screens */
+  font-weight: bold;     /* Bold weight */
+  color: white;          /* White text */
+  margin-bottom: 1.5rem; /* Space below the title */
+  line-height: 1.2;      /* Tight line spacing for big headings */
 }
 
+/* On screens 768px and wider, make the title even bigger */
 @media (min-width: 768px) {
   .hero-title {
-    font-size: 3.75rem;
+    font-size: 3.75rem; /* Larger font for desktop */
   }
 }
 
+/* Gradient text effect (yellow/amber) applied to a word or phrase */
 .gradient-text {
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  display: inline-block;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b); /* Yellow-to-amber gradient */
+  background-clip: text;          /* Clip the gradient to the text shape */
+  -webkit-background-clip: text;  /* Same, for Safari/Chrome compatibility */
+  -webkit-text-fill-color: transparent;   /* more reliable than color: transparent */
+color: #f59e0b;                 /* fallback for browsers that don't support background-clip: text */
+display: inline-block;          /* Needed for background-clip to work correctly */
 }
 
+/* Subtitle paragraph below the hero title */
 .hero-description {
-  font-size: 1.25rem;
-  color: rgba(255, 255, 255, 0.9);
-  max-width: 48rem;
-  margin: 0 auto 2rem;
-  line-height: 1.6;
+  font-size: 1.25rem;              /* Slightly larger than body text */
+  color: rgba(255, 255, 255, 0.9); /* Near-white, slightly transparent */
+  max-width: 48rem;                /* Limit line length for readability */
+  margin: 0 auto 2rem;             /* Center and add space below */
+  line-height: 1.6;                /* Comfortable reading line height */
 }
 
+/* Row of CTA buttons in the hero section */
 .hero-buttons {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+  display: flex;           /* Horizontal layout */
+  align-items: center;     /* Vertically aligned */
+  justify-content: center; /* Centered in the section */
+  gap: 1rem;               /* Space between buttons */
+  flex-wrap: wrap;         /* Wrap to next line on small screens */
 }
 
+/* Grid of feature highlight cards */
 .features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  margin-bottom: 5rem;
+  display: grid;                                      /* CSS grid layout */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive columns, each at least 300px */
+  gap: 2rem;                                          /* Space between cards */
+  margin-bottom: 5rem;                                /* Space below the grid */
 }
 
+/* Individual feature card */
 .feature-card {
-  background: rgba(255, 255, 255, 0.95);
-  padding: 2rem;
-  border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s;
-  text-align: center;
+  background: rgba(255, 255, 255, 0.95); /* Nearly opaque white */
+  padding: 2rem;                         /* Inner spacing */
+  border-radius: 1rem;                   /* Rounded corners */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  transition: all 0.3s;                  /* Smooth animation on hover */
+  text-align: center;                    /* Center-align content */
 }
 
+/* Lift card up on hover */
 .feature-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  transform: translateY(-8px);                       /* Move card upward */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); /* Bigger shadow for depth */
 }
 
+/* Colored icon box inside each feature card */
 .feature-icon {
-  width: 4rem;
-  height: 4rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border-radius: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1rem;
-  color: white;
+  width: 4rem;                                           /* Fixed size */
+  height: 4rem;                                          /* Fixed size */
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); /* Blue gradient */
+  border-radius: 1rem;                                   /* Rounded corners */
+  display: flex;                                         /* Center the icon inside */
+  align-items: center;                                   /* Vertical centering */
+  justify-content: center;                               /* Horizontal centering */
+  margin: 0 auto 1rem;                                   /* Center horizontally, space below */
+  color: white;                                          /* White icon color */
 }
 
+/* Feature card heading */
 .feature-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: #1f2937;
+  font-size: 1.25rem;   /* Medium-large font */
+  font-weight: 600;     /* Semi-bold */
+  margin-bottom: 0.5rem; /* Space below title */
+  color: #1f2937;       /* Dark text */
 }
 
+/* Feature card body text */
 .feature-description {
-  color: #6b7280;
-  line-height: 1.5;
+  color: #6b7280;    /* Medium gray text */
+  line-height: 1.5;  /* Comfortable line spacing */
 }
 
+/* Glassmorphism demo section container */
 .demo-section {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  padding: 2rem;
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.1); /* Translucent white background */
+  border-radius: 1rem;                  /* Rounded corners */
+  padding: 2rem;                        /* Inner spacing */
+  -webkit-backdrop-filter: blur(10px);  /* safari support */
+  backdrop-filter: blur(10px);          /* Blur content behind (glass effect) */
 }
 
+/* Heading of the demo section */
 .demo-title {
-  font-size: 2rem;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 2rem;
-  color: white;
+  font-size: 2rem;      /* Large heading */
+  font-weight: bold;    /* Bold */
+  text-align: center;   /* Centered */
+  margin-bottom: 2rem;  /* Space below */
+  color: white;         /* White text */
 }
 
+/* Responsive grid inside the demo section */
 .demo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
+  display: grid;                                        /* CSS grid */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive columns */
+  gap: 1rem;                                            /* Space between cards */
 }
 
+/* Clickable demo card (acts as a button) */
 .demo-card {
-  background: rgba(255, 255, 255, 0.95);
-  padding: 1.25rem;
-  border-radius: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-  width: 100%;
-  text-align: left;
+  background: rgba(255, 255, 255, 0.95); /* Near-white background */
+  padding: 1.25rem;                      /* Inner spacing */
+  border-radius: 0.75rem;               /* Rounded corners */
+  display: flex;                         /* Horizontal layout */
+  align-items: center;                   /* Vertically centered content */
+  justify-content: space-between;        /* Push content to opposite ends */
+  cursor: pointer;                       /* Hand cursor */
+  transition: all 0.2s;                  /* Smooth hover effect */
+  border: none;                          /* No border (it's a <button>) */
+  width: 100%;                           /* Full width of its grid cell */
+  text-align: left;                      /* Left-align text inside */
 }
 
+/* Slide right and deepen background on hover */
 .demo-card:hover {
-  transform: translateX(4px);
-  background: white;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transform: translateX(4px);                        /* Slide slightly right */
+  background: white;                                 /* Fully opaque white */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);  /* Add shadow */
 }
 
+/* Title text inside each demo card */
 .demo-card-title {
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 0.25rem;
+  font-weight: 600;   /* Semi-bold */
+  color: #1f2937;     /* Dark gray */
+  margin-bottom: 0.25rem; /* Tiny space below */
 }
 
+/* Description text inside each demo card */
 .demo-card-desc {
-  font-size: 0.875rem;
-  color: #6b7280;
+  font-size: 0.875rem; /* Slightly smaller than body text */
+  color: #6b7280;      /* Medium gray */
 }
 
-/* Responsive adjustments */
+/* ── Responsive adjustments for small screens ── */
 @media (max-width: 768px) {
+
   .landing-main {
-    padding: 2rem 1rem;
+    padding: 2rem 1rem; /* Reduce padding on small screens */
   }
-  
+
   .hero-title {
-    font-size: 2rem;
+    font-size: 2rem; /* Smaller title on mobile */
   }
-  
+
   .hero-description {
-    font-size: 1rem;
+    font-size: 1rem; /* Normal font size on mobile */
   }
-  
+
   .features-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* Stack feature cards in a single column */
   }
-  
+
   .demo-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* Stack demo cards in a single column */
   }
 }
-/* Animation pour les messages d'erreur */
+
+/* Keyframe animation: element slides down while fading in ------------------------------------------------------------------*/
 @keyframes slideDown {
   from {
-    opacity: 0;
-    transform: translateY(-10px);
+    opacity: 0;                   /* Start fully transparent */
+    transform: translateY(-10px); /* Start 10px above final position */
   }
   to {
-    opacity: 1;
-    transform: translateY(0);
+    opacity: 1;              /* End fully visible */
+    transform: translateY(0); /* End at normal position */
   }
 }
 
+/* Apply slideDown animation to inline-styled red error messages */
 div[style*="color: #ef4444"] {
-  animation: slideDown 0.3s ease;
+  animation: slideDown 0.3s ease; /* Run slideDown over 0.3s with ease timing */
 }
 
-/* Style pour les champs désactivés */
+/* Disabled button appearance */
 button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
+  cursor: not-allowed; /* Show "not allowed" cursor when button is disabled */
+  opacity: 0.6;        /* Dim the button to indicate it's inactive */
 }
 
-/* Focus ring pour accessibilité */
+/* Keyboard-focus outline for accessibility (only when navigating via keyboard) */
 input:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
+  outline: 2px solid #3b82f6; /* Blue outline around focused input */
+  outline-offset: 2px;        /* Small gap between the input border and outline */
 }
-/* Styles responsifs pour la navbar */
+
+/* Hide nav links on small screens */
 @media (max-width: 768px) {
   .nav-links {
-    display: none;
+    display: none; /* Collapse navigation links on mobile */
   }
-  
+
   .mobile-menu-button {
-    display: block;
+    display: block; /* Show the hamburger/mobile menu button instead */
   }
 }
 
-/* Animation pour le menu mobile */
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
+/* Apply slideDown animation when the mobile menu appears */
 .mobile-menu {
-  animation: slideDown 0.3s ease;
+  animation: slideDown 0.3s ease; /* Animate menu opening */
 }
 
-/* Style pour les liens actifs */
+/* Highlight style for the currently active navigation link */
 .nav-link-active {
-  background: #eff6ff;
-  color: #3b82f6;
+  background: #eff6ff; /* Very light blue background */
+  color: #3b82f6;      /* Blue text to match the active state */
 }
 
-/* Transition smooth pour tous les boutons */
+/* Apply smooth transition to all buttons and links globally */
 button, a {
-  transition: all 0.2s ease;
+  transition: all 0.2s ease; /* Animate any property change over 0.2s */
 }
 
-/* Animations pour le modal */
+/* Keyframe animation: fade in from transparent */
 @keyframes fadeIn {
   from {
-    opacity: 0;
+    opacity: 0; /* Start invisible */
   }
   to {
-    opacity: 1;
+    opacity: 1; /* End fully visible */
   }
 }
 
+/* Keyframe animation: slide up while fading in (for modals) */
 @keyframes slideUp {
   from {
-    transform: translateY(20px);
-    opacity: 0;
+    transform: translateY(20px); /* Start 20px below final position */
+    opacity: 0;                  /* Start invisible */
   }
   to {
-    transform: translateY(0);
-    opacity: 1;
+    transform: translateY(0); /* End at normal position */
+    opacity: 1;               /* End fully visible */
   }
 }
 
-/* Style pour le curseur pointer sur le profil */
+/* Clickable profile element — pointer cursor and smooth transition */
 .profile-clickable {
-  cursor: pointer;
-  transition: all 0.2s ease;
+  cursor: pointer;      /* Hand cursor to indicate it's clickable */
+  transition: all 0.2s ease; /* Smooth animation on state changes */
 }
 
+/* Scale up and highlight profile on hover */
 .profile-clickable:hover {
-  background: #f3f4f6;
-  transform: scale(1.02);
+  background: #f3f4f6;     /* Light gray background on hover */
+  transform: scale(1.02);  /* Slightly enlarge the element */
 }
