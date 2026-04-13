@@ -41,7 +41,7 @@ const Navbar = () => {
     { path: '/student/history', label: 'History', icon: BookOpen },
   ] : [
     { path: '/teacher/dashboard', label: 'Dashboard', icon: Home },
-      { path: '/teacher/push-code', label: 'Push Code', icon: Code2 }, 
+    { path: '/teacher/push-code', label: 'Push Code', icon: Code2 }, 
     { path: '/teacher/exercises', label: 'Exercises', icon: BookOpen },
     { path: '/teacher/analytics', label: 'Analytics', icon: BarChart3 },
   ];
