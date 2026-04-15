@@ -43,32 +43,8 @@ const Home = () => {
             </span>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <button
-              onClick={() => handleGetStarted('student')}
-              style={{
-                background: 'transparent',
-                color: '#334155',
-                padding: '0.5rem 1rem',
-                border: 'none',
-                borderRadius: '0.5rem',
-                cursor: 'pointer'
-              }}
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => handleGetStarted('student')}
-              style={{
-                background: '#3b82f6',
-                color: 'white',
-                padding: '0.5rem 1rem',
-                border: 'none',
-                borderRadius: '0.5rem',
-                cursor: 'pointer',
-                fontWeight: '500'
-              }}
-            >
-              Get Started
+            <button onClick={() => navigate('/signup')} className="btn-primary-landing">
+              Sign Up
             </button>
           </div>
         </div>
@@ -104,7 +80,7 @@ const Home = () => {
           </p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
-              onClick={() => handleGetStarted('student')}
+              onClick={() => handleGetStarted('student')} 
               style={{
                 background: '#3b82f6',
                 color: 'white',

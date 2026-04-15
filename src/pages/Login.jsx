@@ -407,6 +407,13 @@ const Login = () => {
             >
               Sign In
             </button>
+
+            <div style={{ textAlign: 'center', fontSize: '0.875rem', color: '#6b7280', marginTop: '1rem' }}>
+              Don't have an account?{' '}
+              <Link to="/signup" style={{ color: '#3b82f6', textDecoration: 'none' }}>
+                Sign Up
+              </Link>
+            </div>
           </form>
 
           <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem', color: '#6b7280' }}>
