@@ -453,3 +453,32 @@ button, a {
   background: #f3f4f6;
   transform: scale(1.02);
 }
+
+/* Styles pour la navbar responsive */
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  
+  .desktop-user > div:first-child {
+    display: none !important;
+  }
+  
+  .desktop-user > button:first-of-type {
+    display: none !important;
+  }
+  
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-menu-btn {
+    display: none !important;
+  }
+  
+  .mobile-menu {
+    display: none !important;
+  }
+}

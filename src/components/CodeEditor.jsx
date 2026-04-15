@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { Play, Trash2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Play, Trash2, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
 
-const CodeEditor = ({ code, setCode, onRun, language = 'pseudocode' }) => {
+const CodeEditor = ({ code, setCode, onRun, onToggleOutput, showOutput, onToggleFullscreen, isFullscreen }) => {
   const [lineCount, setLineCount] = useState(1);
+  const textareaRef = useRef(null);
+  const lineNumbersRef = useRef(null);
 
   const handleCodeChange = (e) => {
     const newCode = e.target.value;
@@ -15,15 +17,11 @@ const CodeEditor = ({ code, setCode, onRun, language = 'pseudocode' }) => {
     setCode('');
   };
 
-  // Syntax highlighting for pseudocode
-  const highlightSyntax = (code) => {
-    const keywords = ['if', 'else', 'while', 'for', 'function', 'return', 'print', 'input'];
-    let highlighted = code;
-    keywords.forEach(keyword => {
-      const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-      highlighted = highlighted.replace(regex, `<span style="color: #569cd6; font-weight: bold;">${keyword}</span>`);
-    });
-    return highlighted;
+  // Synchroniser le défilement des numéros avec le textarea
+  const handleScroll = (e) => {
+    if (lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = e.target.scrollTop;
+    }
   };
 
   return (
@@ -35,33 +33,86 @@ const CodeEditor = ({ code, setCode, onRun, language = 'pseudocode' }) => {
       borderRadius: '0.5rem',
       overflow: 'hidden',
     }}>
+      {/* Barre d'outils */}
       <div style={{
         background: '#2d2d2d',
-        padding: '0.5rem 1rem',
+        padding: '0.5rem',
         borderBottom: '1px solid #3e3e3e',
         display: 'flex',
+        flexWrap: 'wrap',
         justifyContent: 'space-between',
         alignItems: 'center',
+        gap: '0.5rem',
       }}>
-        <span style={{ color: '#ccc', fontSize: '0.875rem' }}>Pseudo-code Editor</span>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <span style={{ color: '#ccc', fontSize: '0.75rem', fontWeight: '500' }}>
+          Pseudo-code Editor
+        </span>
+        
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '0.5rem',
+        }}>
+          {onToggleFullscreen && (
+            <button
+              onClick={onToggleFullscreen}
+              style={{
+                background: '#4b5563',
+                color: 'white',
+                border: 'none',
+                padding: '0.25rem 0.5rem',
+                borderRadius: '0.375rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                fontSize: '0.75rem',
+              }}
+            >
+              {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+              <span>{isFullscreen ? 'Exit' : 'Full'}</span>
+            </button>
+          )}
+          
+          {onToggleOutput && (
+            <button
+              onClick={onToggleOutput}
+              style={{
+                background: '#4b5563',
+                color: 'white',
+                border: 'none',
+                padding: '0.25rem 0.5rem',
+                borderRadius: '0.375rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                fontSize: '0.75rem',
+              }}
+            >
+              {showOutput ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+              <span>{showOutput ? 'Hide' : 'Show'}</span>
+            </button>
+          )}
+          
           <button
             onClick={handleClear}
             style={{
-              background: '#4b5563',
+              background: '#ef4444',
               color: 'white',
               border: 'none',
-              padding: '0.25rem 0.75rem',
+              padding: '0.25rem 0.5rem',
               borderRadius: '0.375rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              fontSize: '0.875rem',
+              gap: '0.25rem',
+              fontSize: '0.75rem',
             }}
           >
-            <Trash2 size={16} /> Clear
+            <Trash2 size={14} /> Clear
           </button>
+          
           <button
             onClick={onRun}
             style={{
@@ -73,36 +124,45 @@ const CodeEditor = ({ code, setCode, onRun, language = 'pseudocode' }) => {
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              fontSize: '0.875rem',
+              gap: '0.25rem',
+              fontSize: '0.75rem',
+              fontWeight: 'bold',
             }}
           >
-            <Play size={16} /> Run
+            <Play size={14} /> Run
           </button>
         </div>
       </div>
       
-      <div style={{ display: 'flex', flex: 1, overflow: 'auto' }}>
-        {/* Line numbers */}
-        <div style={{
-          background: '#252526',
-          padding: '1rem 0.5rem',
-          textAlign: 'right',
-          color: '#858585',
-          fontFamily: 'monospace',
-          fontSize: '14px',
-          userSelect: 'none',
-          borderRight: '1px solid #3e3e3e',
-        }}>
+      {/* ZONE D'ÉDITION AVEC DÉFILEMENT SYNCHRONISÉ */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Numéros de ligne - avec scroll */}
+        <div
+          ref={lineNumbersRef}
+          style={{
+            background: '#252526',
+            padding: '1rem 0.5rem',
+            textAlign: 'right',
+            color: '#858585',
+            fontFamily: 'monospace',
+            fontSize: '14px',
+            userSelect: 'none',
+            borderRight: '1px solid #3e3e3e',
+            overflowY: 'auto',  // ← Permet le défilement
+            overflowX: 'hidden',
+          }}
+        >
           {Array.from({ length: lineCount }, (_, i) => (
             <div key={i + 1} style={{ lineHeight: '1.5' }}>{i + 1}</div>
           ))}
         </div>
         
-        {/* Code editor */}
+        {/* Éditeur de texte */}
         <textarea
+          ref={textareaRef}
           value={code}
           onChange={handleCodeChange}
+          onScroll={handleScroll}  // ← Synchronise le défilement
           style={{
             flex: 1,
             background: '#1e1e1e',
@@ -114,6 +174,7 @@ const CodeEditor = ({ code, setCode, onRun, language = 'pseudocode' }) => {
             border: 'none',
             outline: 'none',
             resize: 'none',
+            overflowY: 'auto',  // ← Permet le défilement
           }}
           placeholder='Write your pseudo-code here...
           

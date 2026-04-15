@@ -12,6 +12,8 @@ import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import ExerciseManager from './pages/teacher/ExerciseManager';
 import SubmissionsReview from './pages/teacher/SubmissionsReview';
 import Analytics from './pages/teacher/Analytics';
+import PushCode from './pages/teacher/PushCode';
+import Signup from './pages/Signup';
 
 function App() {
   return (
@@ -61,6 +63,17 @@ function App() {
               <Analytics />
             </ProtectedRoute>
           } />
+          <Route path="/teacher/push-code" element={
+            <ProtectedRoute allowedRoles={['teacher']}>
+              <PushCode />
+            </ProtectedRoute>
+          } />
+          <Route path="/teacher/push-code/:exerciseId/:studentId" element={
+            <ProtectedRoute allowedRoles={['teacher']}>
+              <PushCode />
+            </ProtectedRoute>
+          } />
+          <Route path="/signup" element={<Signup />} />
         </Routes>
       </AuthProvider>
     </Router>
