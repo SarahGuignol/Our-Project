@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Code2, LogOut, User, Home, BookOpen, BarChart3, Menu, X } from 'lucide-react';
+import { Code2, LogOut, User, Home, BookOpen, BarChart3, Menu, X, Users, Shield, Settings } from 'lucide-react';
 import ProfileModal from './ProfileModal';
 import EditProfileModal from './EditProfileModal';
 
@@ -35,16 +35,30 @@ const Navbar = () => {
     return location.pathname.startsWith(path);
   };
 
-  const navLinks = user?.role === 'student' ? [
+  const studentLinks = [
     { path: '/student/dashboard', label: 'Dashboard', icon: Home },
     { path: '/student/coding/free', label: 'Code Editor', icon: Code2 },
     { path: '/student/history', label: 'History', icon: BookOpen },
-  ] : [
+  ];
+
+  const teacherLinks = [
     { path: '/teacher/dashboard', label: 'Dashboard', icon: Home },  
     { path: '/teacher/push-code', label: 'Push Code', icon: Code2 }, 
     { path: '/teacher/exercises', label: 'Exercises', icon: BookOpen },
     { path: '/teacher/analytics', label: 'Analytics', icon: BarChart3 },
   ];
+
+  const adminLinks = [
+    { path: '/admin/dashboard', label: 'Tableau de bord', icon: Home },
+    { path: '/admin/users', label: 'Utilisateurs', icon: Users },
+    { path: '/admin/analytics', label: 'Statistiques', icon: BarChart3 },
+    { path: '/admin/moderation', label: 'Modération', icon: Shield },
+    { path: '/admin/settings', label: 'Paramètres', icon: Settings },
+  ];
+
+  const navLinks = user?.role === 'student' ? studentLinks :
+                   user?.role === 'teacher' ? teacherLinks :
+                   user?.role === 'admin' ? adminLinks : [];
 
   return (
     <>
@@ -65,7 +79,7 @@ const Navbar = () => {
           flexWrap: 'wrap',
         }}>
           {/* Logo */}
-          <Link to={user?.role === 'student' ? '/student/dashboard' : '/teacher/dashboard'} 
+          <Link to={user?.role === 'student' ? '/student/dashboard' : user?.role === 'teacher' ? '/teacher/dashboard' : '/admin/dashboard'} 
                 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
             <div style={{
               width: '2rem',
@@ -83,7 +97,7 @@ const Navbar = () => {
             </span>
           </Link>
 
-          {/* Liens desktop - cachés sur mobile avec CSS */}
+          {/* Liens desktop */}
           <div className="desktop-nav" style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -141,14 +155,14 @@ const Navbar = () => {
                 </span>
                 <span style={{
                   fontSize: '0.75rem',
-                  background: user?.role === 'teacher' ? '#dbeafe' : '#dcfce7',
-                  color: user?.role === 'teacher' ? '#1e40af' : '#166534',
+                  background: user?.role === 'teacher' ? '#dbeafe' : user?.role === 'admin' ? '#f3e8ff' : '#dcfce7',
+                  color: user?.role === 'teacher' ? '#1e40af' : user?.role === 'admin' ? '#6b21a8' : '#166534',
                   padding: '0.125rem 0.5rem',
                   borderRadius: '9999px',
                   display: 'block',
                   textAlign: 'center',
                 }}>
-                  {user?.role === 'teacher' ? 'Teacher' : 'Student'}
+                  {user?.role === 'teacher' ? 'Teacher' : user?.role === 'admin' ? 'Admin' : 'Student'}
                 </span>
               </div>
             </div>
@@ -238,7 +252,7 @@ const Navbar = () => {
               <div>
                 <div style={{ fontWeight: '500' }}>{user?.name}</div>
                 <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                  {user?.role === 'teacher' ? 'Teacher' : 'Student'}
+                  {user?.role === 'teacher' ? 'Teacher' : user?.role === 'admin' ? 'Admin' : 'Student'}
                 </div>
               </div>
             </div>

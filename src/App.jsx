@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import StudentDashboard from './pages/student/StudentDashboard';
 import CodingScreen from './pages/student/CodingScreen';
 import StudentHistory from './pages/student/StudentHistory';
@@ -13,17 +14,24 @@ import ExerciseManager from './pages/teacher/ExerciseManager';
 import SubmissionsReview from './pages/teacher/SubmissionsReview';
 import Analytics from './pages/teacher/Analytics';
 import PushCode from './pages/teacher/PushCode';
-import Signup from './pages/Signup';
+
+// Pages Admin
+import AdminDashboard from './pages/admin/AdminDashboard';
+import UserManagement from './pages/admin/UserManagement';
+import PlatformSettings from './pages/admin/PlatformSettings';
+import SystemAnalytics from './pages/admin/SystemAnalytics';
+import ContentModeration from './pages/admin/ContentModeration';
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-        <Navbar /> {/* Navbar est en dehors des routes, s'affiche partout */}
+        <Navbar />
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           
           {/* Student Routes */}
           <Route path="/student/dashboard" element={
@@ -73,7 +81,33 @@ function App() {
               <PushCode />
             </ProtectedRoute>
           } />
-          <Route path="/signup" element={<Signup />} />
+
+          {/* Admin Routes */}
+          <Route path="/admin/dashboard" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/users" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <UserManagement />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/settings" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <PlatformSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/analytics" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <SystemAnalytics />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/moderation" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <ContentModeration />
+            </ProtectedRoute>
+          } />
         </Routes>
       </AuthProvider>
     </Router>

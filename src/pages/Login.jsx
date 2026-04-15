@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Code2, Mail, Lock, ArrowLeft, Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react';
+import { Code2, Mail, Lock, ArrowLeft, Eye, EyeOff, CheckCircle, XCircle, Shield } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('student');
+  const [adminCode, setAdminCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showAdminCode, setShowAdminCode] = useState(false);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const { login } = useAuth();
@@ -20,19 +22,16 @@ const Login = () => {
     }
   }, [location]);
 
-  // Fonctions de validation
   const validateEmail = (email) => {
     if (!email) {
       return 'Email is required';
     }
     
-    // Regex pour validation email complète
     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
     if (!emailRegex.test(email)) {
       return 'Please enter a valid email address (e.g., name@domain.com)';
     }
     
-    // Vérification spécifique selon le rôle
     if (role === 'teacher' && !email.includes('@') && !email.includes('.edu')) {
       return 'Teacher email should be from an educational institution';
     }
@@ -49,7 +48,6 @@ const Login = () => {
       return 'Password must be at least 8 characters long';
     }
     
-    // Vérifications supplémentaires
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
@@ -71,42 +69,50 @@ const Login = () => {
     return '';
   };
 
-  // Validation en temps réel
+  const validateAdminCode = (code) => {
+    if (role !== 'admin') return '';
+    if (!code) return 'Admin code is required';
+    if (code !== '2005') return 'Invalid admin code';
+    return '';
+  };
+
   useEffect(() => {
     const emailError = validateEmail(email);
     const passwordError = validatePassword(password);
+    const adminCodeError = validateAdminCode(adminCode);
     
     setErrors({
       email: emailError,
-      password: passwordError
+      password: passwordError,
+      adminCode: adminCodeError
     });
-  }, [email, password, role]);
+  }, [email, password, adminCode, role]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Marquer tous les champs comme touchés
-    setTouched({ email: true, password: true });
+    setTouched({ email: true, password: true, adminCode: true });
     
     const emailError = validateEmail(email);
     const passwordError = validatePassword(password);
+    const adminCodeError = validateAdminCode(adminCode);
     
-    if (!emailError && !passwordError) {
-      // Connexion réussie
+    if (!emailError && !passwordError && !adminCodeError) {
       login(email, password, role);
-      navigate(role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard');
+      navigate(role === 'teacher' ? '/teacher/dashboard' : role === 'admin' ? '/admin/dashboard' : '/student/dashboard');
     }
   };
 
   const getEmailPlaceholder = () => {
     if (role === 'teacher') {
       return "teacher@school.edu";
+    } else if (role === 'admin') {
+      return "admin@codelearn.com";
     } else {
       return "student@university.edu";
     }
   };
 
-  // Composant pour afficher la force du mot de passe
   const getPasswordStrength = () => {
     if (!password) return null;
     
@@ -198,7 +204,7 @@ const Login = () => {
             {/* Role Selection */}
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>I am a...</label>
-              <div style={{ display: 'flex', gap: '1rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                   <input
                     type="radio"
@@ -207,6 +213,7 @@ const Login = () => {
                     onChange={(e) => {
                       setRole(e.target.value);
                       setEmail('');
+                      setAdminCode('');
                       setErrors({});
                     }}
                   />
@@ -220,10 +227,25 @@ const Login = () => {
                     onChange={(e) => {
                       setRole(e.target.value);
                       setEmail('');
+                      setAdminCode('');
                       setErrors({});
                     }}
                   />
                   Teacher
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    value="admin"
+                    checked={role === 'admin'}
+                    onChange={(e) => {
+                      setRole(e.target.value);
+                      setEmail('');
+                      setAdminCode('');
+                      setErrors({});
+                    }}
+                  />
+                  Admin
                 </label>
               </div>
             </div>
@@ -362,7 +384,7 @@ const Login = () => {
 
             {/* Password requirements list */}
             <div style={{ 
-              marginBottom: '1.5rem', 
+              marginBottom: '1rem', 
               padding: '0.75rem',
               background: '#f9fafb',
               borderRadius: '0.5rem',
@@ -393,16 +415,96 @@ const Login = () => {
               </div>
             </div>
 
+            {/* Admin Code Field - visible only when admin role is selected */}
+            {role === 'admin' && (
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  Admin Code <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Shield size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+                  <input
+                    type={showAdminCode ? 'text' : 'password'}
+                    value={adminCode}
+                    onChange={(e) => setAdminCode(e.target.value)}
+                    onBlur={() => setTouched({ ...touched, adminCode: true })}
+                    placeholder="Enter admin code"
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.75rem 0.75rem 0.75rem 2.5rem', 
+                      border: `2px solid ${
+                        touched.adminCode && errors.adminCode 
+                          ? '#ef4444' 
+                          : touched.adminCode && !errors.adminCode && adminCode
+                          ? '#10b981'
+                          : '#d1d5db'
+                      }`,
+                      borderRadius: '0.5rem',
+                      outline: 'none',
+                      transition: 'all 0.2s',
+                      backgroundColor: 'white',
+                      paddingRight: '2.5rem'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminCode(!showAdminCode)}
+                    style={{
+                      position: 'absolute',
+                      right: '0.75rem',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#9ca3af'
+                    }}
+                  >
+                    {showAdminCode ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                  {touched.adminCode && adminCode && !errors.adminCode && (
+                    <CheckCircle size={18} style={{ position: 'absolute', right: '2.5rem', top: '50%', transform: 'translateY(-50%)', color: '#10b981' }} />
+                  )}
+                </div>
+                {touched.adminCode && errors.adminCode && (
+                  <div style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    {errors.adminCode}
+                  </div>
+                )}
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={!!errors.email || !!errors.password || !email || !password}
+              disabled={
+                !!errors.email || 
+                !!errors.password || 
+                (role === 'admin' && !!errors.adminCode) ||
+                !email || 
+                !password ||
+                (role === 'admin' && !adminCode)
+              }
               className="btn-primary"
               style={{ 
                 width: '100%', 
                 padding: '0.75rem', 
                 fontSize: '1rem',
-                opacity: (errors.email || errors.password || !email || !password) ? 0.5 : 1,
-                cursor: (errors.email || errors.password || !email || !password) ? 'not-allowed' : 'pointer'
+                opacity: (
+                  errors.email || 
+                  errors.password || 
+                  (role === 'admin' && errors.adminCode) ||
+                  !email || 
+                  !password ||
+                  (role === 'admin' && !adminCode)
+                ) ? 0.5 : 1,
+                cursor: (
+                  errors.email || 
+                  errors.password || 
+                  (role === 'admin' && errors.adminCode) ||
+                  !email || 
+                  !password ||
+                  (role === 'admin' && !adminCode)
+                ) ? 'not-allowed' : 'pointer'
               }}
             >
               Sign In
@@ -421,6 +523,7 @@ const Login = () => {
             <p style={{ fontSize: '0.75rem', marginTop: '0.5rem' }}>
               <strong>Student:</strong> student@university.edu / Student@123<br />
               <strong>Teacher:</strong> teacher@school.edu / Teacher@123<br />
+              <strong>Admin:</strong> admin@codelearn.com / any password / Admin Code: 2005<br />
               <em>(Use any email format that passes validation)</em>
             </p>
           </div>
