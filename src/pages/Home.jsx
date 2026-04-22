@@ -39,7 +39,7 @@ const Home = () => {
               <Code2 size={20} color="white" />
             </div>
             <span style={{ fontWeight: 'bold', fontSize: '1.125rem', color: '#0f172a' }}>
-              CodeLearn
+              Algorithm Analyser & Debugger 
             </span>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>

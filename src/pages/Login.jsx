@@ -162,7 +162,7 @@ const Login = () => {
           }}>
             <Code2 size={20} color="#3b82f6" />
           </div>
-          <span style={{ color: 'white', fontWeight: '600', fontSize: '1.125rem' }}>CodeLearn</span>
+          <span style={{ color: 'white', fontWeight: '600', fontSize: '1.125rem' }}>Algorithm Analyser & Debugger</span>
         </Link>
         
         <Link to="/" style={{
@@ -197,7 +197,7 @@ const Login = () => {
               <Code2 size={48} color="#3b82f6" />
             </div>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Welcome Back</h1>
-            <p style={{ color: '#6b7280' }}>Sign in to continue to CodeLearn</p>
+            <p style={{ color: '#6b7280' }}>Sign in to continue in Algorithm Analyser & Debugger</p>
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -518,15 +518,7 @@ const Login = () => {
             </div>
           </form>
 
-          <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem', color: '#6b7280' }}>
-            <p>Demo Credentials:</p>
-            <p style={{ fontSize: '0.75rem', marginTop: '0.5rem' }}>
-              <strong>Student:</strong> student@university.edu / Student@123<br />
-              <strong>Teacher:</strong> teacher@school.edu / Teacher@123<br />
-              <strong>Admin:</strong> admin@codelearn.com / any password / Admin Code: 2005<br />
-              <em>(Use any email format that passes validation)</em>
-            </p>
-          </div>
+          
         </div>
       </div>
     </div>

@@ -6,21 +6,30 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+
+// Student Pages
 import StudentDashboard from './pages/student/StudentDashboard';
 import CodingScreen from './pages/student/CodingScreen';
 import StudentHistory from './pages/student/StudentHistory';
+import BrowseClasses from './pages/student/BrowseClasses';
+
+// Teacher Pages
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
+import ClassesManagement from './pages/teacher/ClassesManagement';
+import TClassExercises from './pages/teacher/TClassExercises';
 import ExerciseManager from './pages/teacher/ExerciseManager';
 import SubmissionsReview from './pages/teacher/SubmissionsReview';
-import Analytics from './pages/teacher/Analytics';
 import PushCode from './pages/teacher/PushCode';
+import Analytics from './pages/teacher/Analytics';
 
-// Pages Admin
+// Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
 import PlatformSettings from './pages/admin/PlatformSettings';
 import SystemAnalytics from './pages/admin/SystemAnalytics';
-import ContentModeration from './pages/admin/ContentModeration';
+import ClassManagement from './pages/admin/ClassManagement';
+import ClassExercises from './pages/admin/ClassExercises';
+import ExerciseDetail from './pages/admin/ExerciseDetail';
 
 function App() {
   return (
@@ -37,6 +46,11 @@ function App() {
           <Route path="/student/dashboard" element={
             <ProtectedRoute allowedRoles={['student']}>
               <StudentDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/student/browse" element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <BrowseClasses />
             </ProtectedRoute>
           } />
           <Route path="/student/coding/:mode/:id?" element={
@@ -56,6 +70,16 @@ function App() {
               <TeacherDashboard />
             </ProtectedRoute>
           } />
+          <Route path="/teacher/classes" element={
+            <ProtectedRoute allowedRoles={['teacher']}>
+              <ClassesManagement />
+            </ProtectedRoute>
+          } />
+          <Route path="/teacher/classes/:classId/exercises" element={
+            <ProtectedRoute allowedRoles={['teacher']}>
+              <TClassExercises />
+            </ProtectedRoute>
+          } />
           <Route path="/teacher/exercises" element={
             <ProtectedRoute allowedRoles={['teacher']}>
               <ExerciseManager />
@@ -66,11 +90,6 @@ function App() {
               <SubmissionsReview />
             </ProtectedRoute>
           } />
-          <Route path="/teacher/analytics" element={
-            <ProtectedRoute allowedRoles={['teacher']}>
-              <Analytics />
-            </ProtectedRoute>
-          } />
           <Route path="/teacher/push-code" element={
             <ProtectedRoute allowedRoles={['teacher']}>
               <PushCode />
@@ -79,6 +98,11 @@ function App() {
           <Route path="/teacher/push-code/:exerciseId/:studentId" element={
             <ProtectedRoute allowedRoles={['teacher']}>
               <PushCode />
+            </ProtectedRoute>
+          } />
+          <Route path="/teacher/analytics" element={
+            <ProtectedRoute allowedRoles={['teacher']}>
+              <Analytics />
             </ProtectedRoute>
           } />
 
@@ -93,9 +117,19 @@ function App() {
               <UserManagement />
             </ProtectedRoute>
           } />
-          <Route path="/admin/settings" element={
+          <Route path="/admin/classes" element={
             <ProtectedRoute allowedRoles={['admin']}>
-              <PlatformSettings />
+              <ClassManagement />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/classes/:classId/exercises" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <ClassExercises />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/classes/:classId/exercises/:exerciseId" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <ExerciseDetail />
             </ProtectedRoute>
           } />
           <Route path="/admin/analytics" element={
@@ -103,9 +137,9 @@ function App() {
               <SystemAnalytics />
             </ProtectedRoute>
           } />
-          <Route path="/admin/moderation" element={
+          <Route path="/admin/settings" element={
             <ProtectedRoute allowedRoles={['admin']}>
-              <ContentModeration />
+              <PlatformSettings />
             </ProtectedRoute>
           } />
         </Routes>

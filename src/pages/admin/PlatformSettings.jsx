@@ -5,7 +5,7 @@ import { Save, Globe, Shield, Key } from 'lucide-react';
 const PlatformSettings = () => {
   const { getGlobalSettings, updateGlobalSettings } = useAuth();
   const [settings, setSettings] = useState({
-    siteName: 'CodeLearn',
+    siteName: 'Algorithm Analyser & Debugger',
     maintenanceMode: false,
     allowSignups: true,
     aiApiKey: '',

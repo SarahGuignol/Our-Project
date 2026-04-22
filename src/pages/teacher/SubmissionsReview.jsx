@@ -8,6 +8,16 @@ const SubmissionsReview = () => {
     { id: 1, name: 'John Doe', code: 'function findMax(numbers):\n    max = numbers[0]\n    for num in numbers:\n        if num > max:\n            max = num\n    return max', aiFeedback: 'Good approach! Consider edge cases like empty array.', comment: '', grade: null },
     { id: 2, name: 'Jane Smith', code: 'function findMax(numbers):\n    return max(numbers)  # Using built-in', aiFeedback: 'This uses a built-in function. Try implementing the logic yourself.', comment: '', grade: null },
   ]);
+  useEffect(() => {
+    const savedSubmissions = localStorage.getItem(`submissions_${exerciseId}`);
+    if (savedSubmissions) {
+      const parsed = JSON.parse(savedSubmissions);
+      setStudents(parsed);
+      setSelectedStudent(parsed[0]);
+      setComment(parsed[0].comment || '');
+      setGrade(parsed[0].grade ? parsed[0].grade.toString() : '');
+    }
+  }, [exerciseId]);
   const [selectedStudent, setSelectedStudent] = useState(students[0]);
   const [comment, setComment] = useState('');
   const [grade, setGrade] = useState('');
@@ -18,6 +28,7 @@ const SubmissionsReview = () => {
     );
     setStudents(updatedStudents);
     setSelectedStudent({ ...selectedStudent, comment, grade: grade ? parseInt(grade) : null });
+    localStorage.setItem(`submissions_${exerciseId}`, JSON.stringify(updatedStudents));
     alert('Feedback saved successfully!');
   };
 

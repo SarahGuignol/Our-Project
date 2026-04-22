@@ -130,10 +130,10 @@ const Signup = () => {
           }}>
             <Code2 size={20} color="#3b82f6" />
           </div>
-          <span style={{ color: 'white', fontWeight: '600', fontSize: '1.125rem' }}>CodeLearn</span>
+          <span style={{ color: 'white', fontWeight: '600', fontSize: '1.125rem' }}>Algorithm Analyser & Debugger</span>
         </Link>
         
-        <Link to="/login" style={{
+        <Link to="/" style={{
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem',
@@ -144,7 +144,7 @@ const Signup = () => {
           background: 'rgba(255,255,255,0.2)'
         }}>
           <ArrowLeft size={18} />
-          Back to Login
+          Back to Home
         </Link>
       </nav>
 
@@ -162,7 +162,7 @@ const Signup = () => {
               <Code2 size={48} color="#3b82f6" />
             </div>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Create Account</h1>
-            <p style={{ color: '#6b7280' }}>Join CodeLearn to start learning</p>
+            <p style={{ color: '#6b7280' }}>Join Algorithm Analyser & Debugger to start learning</p>
           </div>
 
           <form onSubmit={handleSubmit}>

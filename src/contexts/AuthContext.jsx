@@ -107,7 +107,7 @@ export const AuthProvider = ({ children }) => {
   const getGlobalSettings = () => {
     const saved = localStorage.getItem('platformSettings');
     return saved ? JSON.parse(saved) : {
-      siteName: 'CodeLearn',
+      siteName: 'Algorithm Analyser & Debugger',
       maintenanceMode: false,
       allowSignups: true,
       aiApiKey: '',

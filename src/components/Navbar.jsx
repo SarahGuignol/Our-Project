@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Code2, LogOut, User, Home, BookOpen, BarChart3, Menu, X, Users, Shield, Settings } from 'lucide-react';
+import { Code2, LogOut, User, Home, BookOpen, BarChart3, Menu, X, Users, Shield, Settings, Search } from 'lucide-react';
 import ProfileModal from './ProfileModal';
 import EditProfileModal from './EditProfileModal';
 
@@ -38,6 +38,7 @@ const Navbar = () => {
   const studentLinks = [
     { path: '/student/dashboard', label: 'Dashboard', icon: Home },
     { path: '/student/coding/free', label: 'Code Editor', icon: Code2 },
+      { path: '/student/browse', label: 'Browse Classes', icon: Search },
     { path: '/student/history', label: 'History', icon: BookOpen },
   ];
 
@@ -49,11 +50,11 @@ const Navbar = () => {
   ];
 
   const adminLinks = [
-    { path: '/admin/dashboard', label: 'Tableau de bord', icon: Home },
-    { path: '/admin/users', label: 'Utilisateurs', icon: Users },
-    { path: '/admin/analytics', label: 'Statistiques', icon: BarChart3 },
-    { path: '/admin/moderation', label: 'Modération', icon: Shield },
-    { path: '/admin/settings', label: 'Paramètres', icon: Settings },
+    { path: '/admin/dashboard', label: 'Dash board', icon: Home },
+    { path: '/admin/users', label: 'Users', icon: Users },
+    { path: '/admin/classes', label: 'Classes', icon: BookOpen },
+    { path: '/admin/analytics', label: 'Statistics', icon: BarChart3 },
+    { path: '/admin/settings', label: 'Setting', icon: Settings },
   ];
 
   const navLinks = user?.role === 'student' ? studentLinks :
@@ -93,7 +94,7 @@ const Navbar = () => {
               <Code2 size={20} color="white" />
             </div>
             <span style={{ fontWeight: 'bold', fontSize: '1.125rem', color: '#1f2937' }}>
-              CodeLearn
+              Algorithm Analyser & Debugger
             </span>
           </Link>
 

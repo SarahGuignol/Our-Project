@@ -1,20 +1,89 @@
-import React from 'react';
-import { X, Mail, Calendar, Award, BookOpen, TrendingUp, Edit2, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Mail, Calendar, Award, BookOpen, TrendingUp, Edit2, User, Users } from 'lucide-react';
+import { calculateStudentStats, initializeMockData } from '../data/mockData';
 
 const ProfileModal = ({ user, onClose, onEdit }) => {
-  if (!user) return null;
-
-  const studentStats = {
-    totalExercises: 12,
-    completedExercises: 8,
-    averageGrade: 85,
-    totalHours: 47,
-    joinDate: '2024-01-15',
-    streak: 15,
-    rank: 'Gold Learner',
-    badges: ['Quick Learner', 'Code Master', 'Problem Solver'],
+  const [stats, setStats] = useState({
+    totalExercises: 0,
+    completedExercises: 0,
+    averageGrade: 0,
+    totalHours: 0,
+    enrolledClasses: 0,
+    joinDate: '',
     location: 'San Francisco, CA'
+  });
+
+  useEffect(() => {
+    initializeMockData();
+    
+    if (user?.role === 'student') {
+      const studentStats = calculateStudentStats(user);
+      setStats(studentStats);
+    } else if (user?.role === 'teacher') {
+      calculateTeacherStats();
+    } else if (user?.role === 'admin') {
+      calculateAdminStats();
+    }
+  }, [user]);
+
+  const calculateTeacherStats = () => {
+    // Load from teacherClasses in localStorage
+    const savedClasses = localStorage.getItem('teacherClasses');
+    let teacherClasses = [];
+    
+    if (savedClasses) {
+      const allClasses = JSON.parse(savedClasses);
+      teacherClasses = allClasses.filter(c => c.teacherId === user?.id);
+    }
+    
+    // If no classes, use mock data
+    if (teacherClasses.length === 0) {
+      teacherClasses = [
+        { id: 1, name: 'CS101 - Programming Fundamentals', students: 25 },
+        { id: 2, name: 'CS201 - Data Structures', students: 20 }
+      ];
+    }
+    
+    // Calculate total exercises
+    let totalExercises = 0;
+    teacherClasses.forEach(cls => {
+      const savedExercises = localStorage.getItem(`exercises_${cls.id}`);
+      if (savedExercises) {
+        totalExercises += JSON.parse(savedExercises).length;
+      }
+    });
+    
+    const totalStudents = teacherClasses.reduce((sum, cls) => sum + (cls.students || 0), 0);
+    
+    setStats({
+      totalClasses: teacherClasses.length,
+      totalStudents: totalStudents,
+      totalExercises: totalExercises,
+      averageGrade: 0,
+      totalHours: teacherClasses.length * 45,
+      joinDate: user?.joinDate || new Date().toISOString().split('T')[0],
+      location: 'Faculty Office'
+    });
   };
+
+  const calculateAdminStats = () => {
+    const allUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
+    const teacherClasses = JSON.parse(localStorage.getItem('teacherClasses') || '[]');
+    
+    const totalStudents = allUsers.filter(u => u.role === 'student').length;
+    const totalTeachers = allUsers.filter(u => u.role === 'teacher').length;
+    
+    setStats({
+      totalUsers: allUsers.length,
+      totalStudents: totalStudents,
+      totalTeachers: totalTeachers,
+      totalClasses: teacherClasses.length,
+      joinDate: user?.joinDate || new Date().toISOString().split('T')[0],
+      location: 'Admin Office'
+    });
+  };
+
+  if (!user) return null;
 
   return (
     <div style={{
@@ -34,12 +103,11 @@ const ProfileModal = ({ user, onClose, onEdit }) => {
         borderRadius: '1rem',
         maxWidth: '500px',
         width: '90%',
-        maxHeight: '80vh',
+        maxHeight: '85vh',
         overflow: 'auto',
         position: 'relative'
       }} onClick={(e) => e.stopPropagation()}>
         
-        {/* Header */}
         <div style={{
           background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
           padding: '2rem',
@@ -48,20 +116,17 @@ const ProfileModal = ({ user, onClose, onEdit }) => {
           borderTopLeftRadius: '1rem',
           borderTopRightRadius: '1rem'
         }}>
-          <button
-            onClick={onClose}
-            style={{
-              position: 'absolute',
-              top: '1rem',
-              right: '1rem',
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              borderRadius: '0.5rem',
-              padding: '0.5rem',
-              cursor: 'pointer',
-              color: 'white'
-            }}
-          >
+          <button onClick={onClose} style={{
+            position: 'absolute',
+            top: '1rem',
+            right: '1rem',
+            background: 'rgba(255,255,255,0.2)',
+            border: 'none',
+            borderRadius: '0.5rem',
+            padding: '0.5rem',
+            cursor: 'pointer',
+            color: 'white'
+          }}>
             <X size={20} />
           </button>
           
@@ -78,60 +143,88 @@ const ProfileModal = ({ user, onClose, onEdit }) => {
             fontWeight: 'bold',
             color: '#3b82f6'
           }}>
-            {!user?.photo && user.name.charAt(0)}
+            {!user?.photo && (user.name?.charAt(0) || 'U')}
           </div>
           
           <h2 style={{ color: 'white', marginBottom: '0.25rem' }}>{user.name}</h2>
           <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.875rem' }}>
-            {user.role === 'teacher' ? 'Teacher' : 'Student'} • Member since {studentStats.joinDate}
+            {user.role === 'teacher' ? 'Teacher' : user.role === 'admin' ? 'Administrator' : 'Student'}
+            {stats.joinDate && ` • Member since ${stats.joinDate}`}
           </p>
-          
-          <div style={{
-            display: 'inline-block',
-            background: 'rgba(255,255,255,0.2)',
-            padding: '0.25rem 0.75rem',
-            borderRadius: '9999px',
-            marginTop: '0.5rem',
-            fontSize: '0.75rem'
-          }}>
-            {studentStats.rank}
-          </div>
         </div>
 
-        {/* Stats Grid */}
         <div style={{ padding: '1.5rem' }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '1rem',
-            marginBottom: '1.5rem'
-          }}>
-            <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
-              <BookOpen size={24} color="#3b82f6" style={{ marginBottom: '0.5rem' }} />
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{studentStats.completedExercises}/{studentStats.totalExercises}</div>
-              <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Exercises</div>
+          {user.role === 'student' ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                <Users size={24} color="#8b5cf6" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.enrolledClasses}</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Enrolled Classes</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                <BookOpen size={24} color="#3b82f6" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.completedExercises}/{stats.totalExercises}</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Exercises Done</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                <Award size={24} color="#f59e0b" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.averageGrade}%</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Average Grade</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                <TrendingUp size={24} color="#10b981" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalHours}h</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Hours Coded</div>
+              </div>
             </div>
-            
-            <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
-              <Award size={24} color="#f59e0b" style={{ marginBottom: '0.5rem' }} />
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{studentStats.averageGrade}%</div>
-              <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Avg Grade</div>
+          ) : user.role === 'teacher' ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                <BookOpen size={24} color="#3b82f6" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalClasses || 0}</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Classes</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                <Users size={24} color="#8b5cf6" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalStudents || 0}</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Students</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                <Award size={24} color="#f59e0b" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalExercises || 0}</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Exercises</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                <TrendingUp size={24} color="#10b981" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.averageGrade || 0}%</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Avg Grade</div>
+              </div>
             </div>
-            
-            <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
-              <TrendingUp size={24} color="#10b981" style={{ marginBottom: '0.5rem' }} />
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{studentStats.totalHours}h</div>
-              <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Hours</div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                <Users size={24} color="#3b82f6" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalUsers || 0}</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Total Users</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                <Users size={24} color="#10b981" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalStudents || 0}</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Students</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                <Users size={24} color="#f59e0b" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalTeachers || 0}</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Teachers</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                <BookOpen size={24} color="#8b5cf6" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalClasses || 0}</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Classes</div>
+              </div>
             </div>
-            
-            <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
-              <Calendar size={24} color="#8b5cf6" style={{ marginBottom: '0.5rem' }} />
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{studentStats.streak}</div>
-              <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Streak 🔥</div>
-            </div>
-          </div>
+          )}
 
-          {/* Info Section */}
           <div style={{ marginBottom: '1.5rem' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.75rem' }}>Information</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -143,16 +236,15 @@ const ProfileModal = ({ user, onClose, onEdit }) => {
                 <Mail size={16} />
                 <span>{user.email}</span>
               </div>
-              {studentStats.location && (
+              {stats.joinDate && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.875rem' }}>
-                    <span>📍</span>  {/* Emoji au lieu de l'icône */}
-                    <span>{studentStats.location}</span>
+                  <Calendar size={16} />
+                  <span>Joined {stats.joinDate}</span>
                 </div>
-                )}
+              )}
             </div>
           </div>
 
-          {/* Bio */}
           {user.bio && (
             <div style={{ marginBottom: '1.5rem' }}>
               <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>Bio</h3>
@@ -160,39 +252,16 @@ const ProfileModal = ({ user, onClose, onEdit }) => {
             </div>
           )}
 
-          {/* Badges */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.75rem' }}>Achievements</h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-              {studentStats.badges.map((badge, index) => (
-                <span key={index} style={{
-                  background: '#eff6ff',
-                  color: '#1e40af',
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '9999px',
-                  fontSize: '0.75rem',
-                  fontWeight: '500'
-                }}>
-                  🏆 {badge}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Edit Button */}
-          <button
-            onClick={onEdit}
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              background: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '0.5rem',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
-          >
+          <button onClick={onEdit} style={{
+            width: '100%',
+            padding: '0.75rem',
+            background: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '0.5rem',
+            cursor: 'pointer',
+            fontWeight: '500'
+          }}>
             <Edit2 size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
             Edit Profile
           </button>

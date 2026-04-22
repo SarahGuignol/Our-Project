@@ -1,40 +1,90 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, BookOpen, TrendingUp, Plus } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { Users, BookOpen, TrendingUp, Plus, Settings } from 'lucide-react';
 
 const TeacherDashboard = () => {
   const navigate = useNavigate();
-  const [classes] = useState([
-    {
-      id: 1,
-      name: 'CS101 - Programming Fundamentals',
-      students: 25,
-      exercises: [
-        { id: 1, title: 'Find Maximum Number', submissions: 20, averageGrade: 78 },
-        { id: 2, title: 'Calculate Factorial', submissions: 18, averageGrade: 82 },
-      ],
-    },
-    {
-      id: 2,
-      name: 'CS201 - Data Structures',
-      students: 20,
-      exercises: [
-        { id: 3, title: 'Bubble Sort', submissions: 15, averageGrade: 75 },
-        { id: 4, title: 'Binary Search', submissions: 12, averageGrade: 80 },
-      ],
-    },
-  ]);
+  const { user } = useAuth();
+  const [classes, setClasses] = useState([]);
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    totalExercises: 0,
+    avgCompletion: 0
+  });
 
-  const totalStudents = classes.reduce((sum, c) => sum + c.students, 0);
-  const totalExercises = classes.reduce((sum, c) => sum + c.exercises.length, 0);
-  const avgCompletion = Math.round(
-        classes.reduce((sum, c) => {
-          // For each class, calculate the ratio of total submissions to total possible submissions
-          const classSubmissions = c.exercises.reduce((s, e) => s + e.submissions, 0);
-          const classTotal = c.exercises.length * c.students;
-          return sum + (classSubmissions / classTotal) * 100;
-        }, 0) / classes.length // Divide by number of classes to get the average
-      );
+  useEffect(() => {
+    loadClasses();
+  }, []);
+
+  // Recharger quand on revient sur la page
+  useEffect(() => {
+    const handleFocus = () => loadClasses();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
+  const loadClasses = () => {
+    // Charger les classes depuis localStorage
+    const savedClasses = localStorage.getItem('teacherClasses');
+    let teacherClasses = [];
+    
+    if (savedClasses) {
+      const allClasses = JSON.parse(savedClasses);
+      teacherClasses = allClasses.filter(c => c.teacherId === user?.id);
+    }
+    
+    
+    
+    // Charger les exercices pour chaque classe
+    const classesWithExercises = teacherClasses.map(cls => {
+      const savedExercises = localStorage.getItem(`exercises_${cls.id}`);
+      let exercises = [];
+      
+      if (savedExercises) {
+        exercises = JSON.parse(savedExercises);
+        // Ajouter des stats mock pour les exercices
+        exercises = exercises.map(ex => ({
+          ...ex,
+          submissions: ex.submissions || Math.floor(Math.random() * cls.students),
+          averageGrade: ex.averageGrade || Math.floor(70 + Math.random() * 25)
+        }));
+      } else if (cls.exercises) {
+        exercises = cls.exercises;
+      }
+      
+      return { ...cls, exercises };
+    });
+    
+    setClasses(classesWithExercises);
+    calculateStats(classesWithExercises);
+  };
+
+  const calculateStats = (classesData) => {
+    const totalStudents = classesData.reduce((sum, c) => sum + (c.students || 0), 0);
+    const totalExercises = classesData.reduce((sum, c) => sum + (c.exercises?.length || 0), 0);
+    
+    let totalSubmissions = 0;
+    let totalPossibleSubmissions = 0;
+    
+    classesData.forEach(cls => {
+      cls.exercises?.forEach(ex => {
+        totalSubmissions += ex.submissions || 0;
+        totalPossibleSubmissions += cls.students || 0;
+      });
+    });
+    
+    const avgCompletion = totalPossibleSubmissions > 0 
+      ? Math.round((totalSubmissions / totalPossibleSubmissions) * 100)
+      : 0;
+    
+    setStats({ totalStudents, totalExercises, avgCompletion });
+  };
+
+  const handleRefresh = () => {
+    loadClasses();
+  };
+
   return (
     <div className="container" style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
@@ -42,78 +92,145 @@ const TeacherDashboard = () => {
           <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold' }}>Teacher Dashboard</h1>
           <p style={{ color: '#6b7280' }}>Manage your classes and track student progress</p>
         </div>
-        <button
-          onClick={() => navigate('/teacher/exercises/new')}
-          className="btn-primary"
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-        >
-          <Plus size={20} /> Create Exercise
-        </button>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button
+            onClick={() => navigate('/teacher/classes')}
+            className="btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            <Settings size={20} /> Manage Classes
+          </button>
+          <button
+            onClick={() => navigate('/teacher/exercises')}
+            className="btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            <Plus size={20} /> Create Exercise
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+        gap: '1rem', 
+        marginBottom: '2rem' 
+      }}>
         <div className="card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
             <Users size={24} color="#3b82f6" />
             <h3>Total Students</h3>
           </div>
-          <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{totalStudents}</p>
+          <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.totalStudents}</p>
         </div>
         <div className="card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
             <BookOpen size={24} color="#10b981" />
             <h3>Total Exercises</h3>
           </div>
-          <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{totalExercises}</p>
+          <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.totalExercises}</p>
         </div>
         <div className="card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
             <TrendingUp size={24} color="#f59e0b" />
             <h3>Avg Completion</h3>
           </div>
-          <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{avgCompletion}%</p>
+          <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.avgCompletion}%</p>
         </div>
       </div>
 
       {/* Classes and Exercises */}
-      {classes.map(classItem => (
-        <div key={classItem.id} className="card" style={{ marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>{classItem.name}</h2>
-          <p style={{ color: '#6b7280', marginBottom: '1rem' }}>{classItem.students} students</p>
-          
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                  <th style={{ textAlign: 'left', padding: '0.75rem' }}>Exercise</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem' }}>Submissions</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem' }}>Avg Grade</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem' }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {classItem.exercises.map(exercise => (
-                  <tr key={exercise.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                    <td style={{ padding: '0.75rem' }}>{exercise.title}</td>
-                    <td style={{ padding: '0.75rem' }}>{exercise.submissions}/{classItem.students}</td>
-                    <td style={{ padding: '0.75rem' }}>{exercise.averageGrade}%</td>
-                    <td style={{ padding: '0.75rem' }}>
-                      <button
-                        onClick={() => navigate(`/teacher/submissions/${exercise.id}`)}
-                        className="btn-secondary"
-                        style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }}
-                      >
-                        Review
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {classes.length > 0 ? (
+        classes.map(classItem => (
+          <div key={classItem.id} className="card" style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <div>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: '600' }}>{classItem.name}</h2>
+                <p style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                  {classItem.description || 'No description'}
+                </p>
+              </div>
+              <button
+                onClick={() => navigate(`/teacher/classes/${classItem.id}/exercises`)}
+                className="btn-secondary"
+                style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }}
+              >
+                Manage Class
+              </button>
+            </div>
+            
+            <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
+              {classItem.students || 0} students enrolled
+            </p>
+            
+            {classItem.exercises && classItem.exercises.length > 0 ? (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                      <th style={{ textAlign: 'left', padding: '0.75rem' }}>Exercise</th>
+                      <th style={{ textAlign: 'left', padding: '0.75rem' }}>Submissions</th>
+                      <th style={{ textAlign: 'left', padding: '0.75rem' }}>Avg Grade</th>
+                      <th style={{ textAlign: 'left', padding: '0.75rem' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {classItem.exercises.map(exercise => (
+                      <tr key={exercise.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <td style={{ padding: '0.75rem' }}>{exercise.title}</td>
+                        <td style={{ padding: '0.75rem' }}>
+                          {exercise.submissions || 0}/{classItem.students || 0}
+                        </td>
+                        <td style={{ padding: '0.75rem' }}>{exercise.averageGrade || 0}%</td>
+                        <td style={{ padding: '0.75rem' }}>
+                          <button
+                            onClick={() => navigate(`/teacher/submissions/${exercise.id}`)}
+                            className="btn-secondary"
+                            style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }}
+                          >
+                            Review
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ color: '#9ca3af', textAlign: 'center', padding: '2rem' }}>
+                No exercises yet. 
+                <button 
+                  onClick={() => navigate(`/teacher/classes/${classItem.id}/exercises`)}
+                  style={{ 
+                    background: 'none', 
+                    border: 'none', 
+                    color: '#3b82f6', 
+                    cursor: 'pointer',
+                    marginLeft: '0.5rem',
+                    textDecoration: 'underline'
+                  }}
+                >
+                  Create your first exercise
+                </button>
+              </p>
+            )}
           </div>
+        ))
+      ) : (
+        <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
+          <BookOpen size={48} color="#9ca3af" style={{ marginBottom: '1rem' }} />
+          <p style={{ color: '#6b7280', fontSize: '1.125rem', marginBottom: '1.5rem' }}>
+            You haven't created any classes yet
+          </p>
+          <button
+            onClick={() => navigate('/teacher/classes')}
+            className="btn-primary"
+          >
+            Create Your First Class
+          </button>
         </div>
-      ))}
+      )}
     </div>
   );
 };
