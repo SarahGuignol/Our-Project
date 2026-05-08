@@ -1,74 +1,87 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
     const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  // Mock users database for admin
-  const [allUsers, setAllUsers] = useState(() => {
-    const saved = localStorage.getItem('allUsers');
-    if (saved) return JSON.parse(saved);
-    return [
-      { id: 'a1', name: 'Admin User', email: 'admin@codelearn.com', role: 'admin', status: 'active', joinDate: '2024-01-01', bio: 'Platform administrator' },
-      { id: 't1', name: 'Dr. Smith', email: 'teacher@school.edu', role: 'teacher', status: 'active', joinDate: '2024-01-10', bio: 'Computer science educator' },
-      { id: 's1', name: 'John Doe', email: 'student@university.edu', role: 'student', status: 'active', joinDate: '2024-01-15', bio: 'CS student' },
-    ];
-  });
-
-  const saveAllUsers = (users) => {
-    setAllUsers(users);
-    localStorage.setItem('allUsers', JSON.stringify(users));
-  };
-
-  const login = (email, password, role) => {
-    const existingUser = allUsers.find(u => u.email === email && u.role === role);
-    if (existingUser) {
-      setUser(existingUser);
-      localStorage.setItem('user', JSON.stringify(existingUser));
-      return existingUser;
+    if (saved) {
+      setUser(JSON.parse(saved));
     }
-    const newUser = {
-      id: Date.now().toString(),
-      name: email.split('@')[0],
-      email,
-      role,
-      status: 'active',
-      joinDate: new Date().toISOString().split('T')[0],
-      bio: role === 'teacher' ? 'Experienced computer science educator passionate about teaching algorithms.' : role === 'admin' ? 'Platform administrator' : 'Computer Science student passionate about algorithms and problem solving.',
-      photo: null
-    };
-    setUser(newUser);
-    saveAllUsers([...allUsers, newUser]);
-    localStorage.setItem('user', JSON.stringify(newUser));
-    return newUser;
+    setLoading(false);
+  }, []);
+
+  const login = async (email, password, role) => {
+    const response = await fetch('http://localhost:8000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, role })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || 'Login failed');
+    }
+
+    if (data.success) {
+      const userData = {
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+        bio: data.user.bio || '',
+        photo: data.user.photo || null,
+        joinDate: data.user.join_date || data.user.created_at 
+      };
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+      return userData;
+    }
+
+    throw new Error('Login failed');
   };
 
-  const signup = (userData) => {
-    const newUser = {
-      id: Date.now().toString(),
-      ...userData,
-      status: 'active',
-      joinDate: new Date().toISOString().split('T')[0]
-    };
-    setUser(newUser);
-    saveAllUsers([...allUsers, newUser]);
-    localStorage.setItem('user', JSON.stringify(newUser));
-    return newUser;
-  };
+  const signup = async (userData) => {
+    const response = await fetch('http://localhost:8000/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: userData.name,
+        email: userData.email,
+        password: userData.password,
+        role: userData.role,
+        bio: userData.bio || ''
+      })
+    });
 
-  const updateProfile = (updatedData) => {
-    const updatedUser = { ...user, ...updatedData };
-    setUser(updatedUser);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    const updatedAll = allUsers.map(u => u.id === updatedUser.id ? updatedUser : u);
-    saveAllUsers(updatedAll);
-    return updatedUser;
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || 'Signup failed');
+    }
+
+    if (data.success) {
+      const newUser = {
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+        bio: data.user.bio || '',
+        photo: null,
+        joinDate: new Date().toISOString().split('T')[0]
+      };
+      setUser(newUser);
+      localStorage.setItem('user', JSON.stringify(newUser));
+      return newUser;
+    }
+
+    throw new Error('Signup failed');
   };
 
   const logout = () => {
@@ -76,62 +89,81 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
   };
 
-  // Admin functions
-  const createUser = (userData) => {
-    const newUser = {
-      id: Date.now().toString(),
-      ...userData,
-      status: 'active',
-      joinDate: new Date().toISOString().split('T')[0]
-    };
-    saveAllUsers([...allUsers, newUser]);
-    return newUser;
-  };
+  const updateProfile = async (updatedData) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: updatedData.name,
+          email: updatedData.email,
+          password: updatedData.password || '',
+          role: user.role,
+          bio: updatedData.bio || ''
+        })
+      });
 
-  const deleteUser = (userId) => {
-    const updated = allUsers.filter(u => u.id !== userId);
-    saveAllUsers(updated);
-    if (user && user.id === userId) {
-      logout();
+      const data = await response.json();
+
+      if (data.success) {
+        const updatedUser = { 
+          ...user, 
+          name: data.user.name,
+          email: data.user.email,
+          bio: data.user.bio,
+          photo: updatedData.photo || user?.photo
+        };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        return updatedUser;
+      }
+      throw new Error(data.detail || 'Update failed');
+    } catch (error) {
+      console.error('Update profile error:', error);
+      throw error;
     }
   };
 
-  const resetUserPassword = (userId) => {
-    alert(`Password reset link sent for user ${userId}`);
-  };
+  const updateUserPhoto = async (photoBase64) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/users/${user.id}/photo`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photo: photoBase64 })
+      });
 
-  const updateGlobalSettings = (settings) => {
-    localStorage.setItem('platformSettings', JSON.stringify(settings));
-  };
+      if (!response.ok) {
+        return false;
+      }
 
-  const getGlobalSettings = () => {
-    const saved = localStorage.getItem('platformSettings');
-    return saved ? JSON.parse(saved) : {
-      siteName: 'Algorithm Analyser & Debugger',
-      maintenanceMode: false,
-      allowSignups: true,
-      aiApiKey: '',
-      contactEmail: 'admin@codelearn.com'
-    };
+      const data = await response.json();
+
+      if (data.success) {
+        const updatedUser = { ...user, photo: photoBase64 };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to update photo:', error);
+      return false;
+    }
   };
 
   const value = {
     user,
-    allUsers: user?.role === 'admin' ? allUsers : null,
     login,
     logout,
     updateProfile,
     signup,
-    createUser,
-    deleteUser,
-    resetUserPassword,
-    updateGlobalSettings,
-    getGlobalSettings
+    updateUserPhoto,
+    loading
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

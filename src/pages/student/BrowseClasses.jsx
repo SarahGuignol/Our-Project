@@ -1,29 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Users, BookOpen, LogIn, CheckCircle, X } from 'lucide-react';
-import { allPlatformClasses, initializeMockData } from '../../data/mockData';
+import { useAuth } from '../../contexts/AuthContext';
+import { api } from '../../services/api';
 
 const BrowseClasses = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchBy, setSearchBy] = useState('className');
-  const [availableClasses, setAvailableClasses] = useState([]);
-  const [enrolledClasses, setEnrolledClasses] = useState([]);
+  const [allClasses, setAllClasses] = useState([]);
+  const [enrolledClassIds, setEnrolledClassIds] = useState([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [enrolledClass, setEnrolledClass] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    initializeMockData();
-    
-    const myEnrolledClasses = JSON.parse(localStorage.getItem('enrolledClasses') || '[1, 2]');
-    
-    const available = allPlatformClasses.filter(
-      cls => !myEnrolledClasses.includes(cls.id)
-    );
-    
-    setAvailableClasses(available);
-    setEnrolledClasses(myEnrolledClasses);
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      // Load all classes from API
+      const classes = await api.getClasses();
+      setAllClasses(classes);
+
+      // Load student's enrollments from API
+      const enrollments = await api.getStudentEnrollments(user?.id || 1);
+      const enrolledIds = enrollments.map(e => e.class_id);
+      setEnrolledClassIds(enrolledIds);
+    } catch (error) {
+      console.log('Could not load data');
+    }
+    setLoading(false);
+  };
+
+  // Filter out already enrolled classes
+  const availableClasses = allClasses.filter(
+    cls => !enrolledClassIds.includes(cls.id)
+  );
 
   const filteredClasses = availableClasses.filter(cls => {
     if (!searchTerm) return true;
@@ -31,18 +47,35 @@ const BrowseClasses = () => {
     if (searchBy === 'className') {
       return cls.name.toLowerCase().includes(searchTerm.toLowerCase());
     } else {
-      return cls.teacher.toLowerCase().includes(searchTerm.toLowerCase());
+      return (cls.teacher || '').toLowerCase().includes(searchTerm.toLowerCase());
     }
   });
 
-  const handleEnroll = (cls) => {
-    const updatedEnrolled = [...enrolledClasses, cls.id];
-    setEnrolledClasses(updatedEnrolled);
-    setAvailableClasses(availableClasses.filter(c => c.id !== cls.id));
-    setEnrolledClass(cls);
-    setShowSuccessModal(true);
-    localStorage.setItem('enrolledClasses', JSON.stringify(updatedEnrolled));
+  const handleEnroll = async (cls) => {
+    const userId = user?.id || 1;
+    
+    try {
+      const result = await api.enrollStudent(cls.id, userId);
+      
+      if (result.success) {
+        setEnrolledClassIds([...enrolledClassIds, cls.id]);
+        setEnrolledClass(cls);
+        setShowSuccessModal(true);
+      } else {
+        alert('Enrollment failed');
+      }
+    } catch (error) {
+      alert('Enrollment failed. Please try again.');
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="container" style={{ padding: '2rem', textAlign: 'center' }}>
+        <p style={{ color: '#6b7280' }}>Loading classes...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container" style={{ padding: '2rem' }}>
@@ -132,13 +165,10 @@ const BrowseClasses = () => {
                 <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.25rem' }}>
                   {cls.name}
                 </h3>
-                <p style={{ color: '#6b7280', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Users size={14} /> {cls.teacher}
-                </p>
               </div>
               
               <p style={{ color: '#4b5563', fontSize: '0.875rem', marginBottom: '1rem', lineHeight: '1.5' }}>
-                {cls.description}
+                {cls.description || 'No description available.'}
               </p>
               
               <div style={{ 
@@ -149,10 +179,7 @@ const BrowseClasses = () => {
                 paddingTop: '1rem',
                 borderTop: '1px solid #e5e7eb'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.875rem' }}>
-                  <Users size={14} />
-                  <span>{cls.students} students enrolled</span>
-                </div>
+                
                 
                 <button
                   onClick={() => handleEnroll(cls)}
@@ -224,19 +251,10 @@ const BrowseClasses = () => {
             </div>
             
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-              <button
-                onClick={() => setShowSuccessModal(false)}
-                className="btn-secondary"
-              >
+              <button onClick={() => setShowSuccessModal(false)} className="btn-secondary">
                 Browse More
               </button>
-              <button
-                onClick={() => {
-                  setShowSuccessModal(false);
-                  navigate('/student/dashboard');
-                }}
-                className="btn-primary"
-              >
+              <button onClick={() => { setShowSuccessModal(false); navigate('/student/dashboard'); }} className="btn-primary">
                 Go to Dashboard
               </button>
             </div>

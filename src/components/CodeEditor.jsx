@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Play, Trash2, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
+import { Play, Trash2, ChevronLeft, ChevronRight, Maximize2, Minimize2, Sparkles } from 'lucide-react';
 
-const CodeEditor = ({ code, setCode, onRun, onToggleOutput, showOutput, onToggleFullscreen, isFullscreen }) => {
+const CodeEditor = ({ code, setCode, onRun, onToggleOutput, showOutput, onAIHelp }) => {
   const [lineCount, setLineCount] = useState(1);
   const textareaRef = useRef(null);
   const lineNumbersRef = useRef(null);
@@ -53,26 +53,6 @@ const CodeEditor = ({ code, setCode, onRun, onToggleOutput, showOutput, onToggle
           flexWrap: 'wrap',
           gap: '0.5rem',
         }}>
-          {onToggleFullscreen && (
-            <button
-              onClick={onToggleFullscreen}
-              style={{
-                background: '#4b5563',
-                color: 'white',
-                border: 'none',
-                padding: '0.25rem 0.5rem',
-                borderRadius: '0.375rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-                fontSize: '0.75rem',
-              }}
-            >
-              {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-              <span>{isFullscreen ? 'Exit' : 'Full'}</span>
-            </button>
-          )}
           
           {onToggleOutput && (
             <button
@@ -131,6 +111,29 @@ const CodeEditor = ({ code, setCode, onRun, onToggleOutput, showOutput, onToggle
           >
             <Play size={14} /> Run
           </button>
+
+          {/* AI Help button - only shown if onAIHelp prop is provided */}
+          {onAIHelp && (
+            <button
+              onClick={onAIHelp}
+              style={{
+                background: '#8b5cf6',
+                color: 'white',
+                border: 'none',
+                padding: '0.25rem 0.75rem',
+                borderRadius: '0.375rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                fontSize: '0.75rem',
+                fontWeight: 'bold',
+              }}
+            >
+              <Sparkles size={14} /> AI Help
+            </button>
+          )}
+
         </div>
       </div>
       

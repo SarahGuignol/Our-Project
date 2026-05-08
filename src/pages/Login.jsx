@@ -40,32 +40,7 @@ const Login = () => {
   };
 
   const validatePassword = (password) => {
-    if (!password) {
-      return 'Password is required';
-    }
-    
-    if (password.length < 8) {
-      return 'Password must be at least 8 characters long';
-    }
-    
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    
-    if (!hasUpperCase) {
-      return 'Password must contain at least one uppercase letter';
-    }
-    if (!hasLowerCase) {
-      return 'Password must contain at least one lowercase letter';
-    }
-    if (!hasNumbers) {
-      return 'Password must contain at least one number';
-    }
-    if (!hasSpecialChar) {
-      return 'Password must contain at least one special character (!@#$%^&*)';
-    }
-    
+    if (!password) return 'Password is required';
     return '';
   };
 
@@ -88,7 +63,7 @@ const Login = () => {
     });
   }, [email, password, adminCode, role]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     setTouched({ email: true, password: true, adminCode: true });
@@ -98,8 +73,12 @@ const Login = () => {
     const adminCodeError = validateAdminCode(adminCode);
     
     if (!emailError && !passwordError && !adminCodeError) {
-      login(email, password, role);
-      navigate(role === 'teacher' ? '/teacher/dashboard' : role === 'admin' ? '/admin/dashboard' : '/student/dashboard');
+      try {
+        await login(email, password, role);
+        navigate(role === 'teacher' ? '/teacher/dashboard' : role === 'admin' ? '/admin/dashboard' : '/student/dashboard');
+      } catch (error) {
+        alert(error.message || 'Login failed. Please check your credentials or sign up.');
+      }
     }
   };
 
@@ -380,39 +359,6 @@ const Login = () => {
                   {errors.password}
                 </div>
               )}
-            </div>
-
-            {/* Password requirements list */}
-            <div style={{ 
-              marginBottom: '1rem', 
-              padding: '0.75rem',
-              background: '#f9fafb',
-              borderRadius: '0.5rem',
-              fontSize: '0.75rem'
-            }}>
-              <div style={{ fontWeight: '500', marginBottom: '0.5rem' }}>Password requirements:</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.25rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  {password.length >= 8 ? <CheckCircle size={12} color="#10b981" /> : <XCircle size={12} color="#9ca3af" />}
-                  <span>At least 8 characters</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  {/[A-Z]/.test(password) ? <CheckCircle size={12} color="#10b981" /> : <XCircle size={12} color="#9ca3af" />}
-                  <span>Uppercase letter</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  {/[a-z]/.test(password) ? <CheckCircle size={12} color="#10b981" /> : <XCircle size={12} color="#9ca3af" />}
-                  <span>Lowercase letter</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  {/\d/.test(password) ? <CheckCircle size={12} color="#10b981" /> : <XCircle size={12} color="#9ca3af" />}
-                  <span>Number</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  {/[!@#$%^&*(),.?":{}|<>]/.test(password) ? <CheckCircle size={12} color="#10b981" /> : <XCircle size={12} color="#9ca3af" />}
-                  <span>Special character</span>
-                </div>
-              </div>
             </div>
 
             {/* Admin Code Field - visible only when admin role is selected */}

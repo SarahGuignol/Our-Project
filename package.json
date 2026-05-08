@@ -1,7 +1,7 @@
 {
-  "name": "code-learning-platform",
+  "name": "algorithm_analyser_debbuger",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

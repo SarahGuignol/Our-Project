@@ -90,6 +90,11 @@ function App() {
               <SubmissionsReview />
             </ProtectedRoute>
           } />
+          <Route path="/teacher/submissions" element={
+            <ProtectedRoute allowedRoles={['teacher']}>
+              <SubmissionsReview />
+            </ProtectedRoute>
+          } />
           <Route path="/teacher/push-code" element={
             <ProtectedRoute allowedRoles={['teacher']}>
               <PushCode />
@@ -130,6 +135,21 @@ function App() {
           <Route path="/admin/classes/:classId/exercises/:exerciseId" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <ExerciseDetail />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/classes/:classId/exercises/:exerciseId" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <ExerciseDetail />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/classes/:classId/exercises/new" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <ExerciseManager />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/classes/:classId/exercises/:exerciseId/edit" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <TClassExercises />
             </ProtectedRoute>
           } />
           <Route path="/admin/analytics" element={

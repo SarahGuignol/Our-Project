@@ -135,6 +135,15 @@ const OutputPanel = ({ output, complexity, aiHelp, variables, executionSteps }) 
 const VariableTable = ({ variables, executionSteps }) => {
   if (!variables || variables.length === 0) return null;
   
+  // Collect all unique variable names across all steps
+  const allVarNames = new Set();
+  variables.forEach(step => {
+    if (step.variables && typeof step.variables === 'object') {
+      Object.keys(step.variables).forEach(key => allVarNames.add(key));
+    }
+  });
+  const varNames = Array.from(allVarNames);
+  
   return (
     <div style={{ overflowX: 'auto' }}>
       <table style={{
@@ -145,18 +154,28 @@ const VariableTable = ({ variables, executionSteps }) => {
         <thead>
           <tr>
             <th style={{ textAlign: 'left', padding: '0.5rem', background: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>Step</th>
-            {Object.keys(variables[0]).filter(key => key !== 'step').map(key => (
-              <th key={key} style={{ textAlign: 'left', padding: '0.5rem', background: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>{key}</th>
+            <th style={{ textAlign: 'left', padding: '0.5rem', background: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>Type</th>
+            <th style={{ textAlign: 'left', padding: '0.5rem', background: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>Description</th>
+            {varNames.map(name => (
+              <th key={name} style={{ textAlign: 'left', padding: '0.5rem', background: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>{name}</th>
             ))}
+            <th style={{ textAlign: 'left', padding: '0.5rem', background: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>Output</th>
           </tr>
         </thead>
         <tbody>
-          {variables.map((variable, idx) => (
+          {variables.map((step, idx) => (
             <tr key={idx}>
-              <td style={{ padding: '0.5rem', borderBottom: '1px solid #e5e7eb', fontFamily: 'monospace' }}>{variable.step || idx + 1}</td>
-              {Object.entries(variable).filter(([key]) => key !== 'step').map(([key, value]) => (
-                <td key={key} style={{ padding: '0.5rem', borderBottom: '1px solid #e5e7eb', fontFamily: 'monospace' }}>{String(value)}</td>
+              <td style={{ padding: '0.5rem', borderBottom: '1px solid #e5e7eb', fontFamily: 'monospace' }}>{step.step || idx + 1}</td>
+              <td style={{ padding: '0.5rem', borderBottom: '1px solid #e5e7eb' }}>{step.type}</td>
+              <td style={{ padding: '0.5rem', borderBottom: '1px solid #e5e7eb' }}>{step.description}</td>
+              {varNames.map(name => (
+                <td key={name} style={{ padding: '0.5rem', borderBottom: '1px solid #e5e7eb', fontFamily: 'monospace' }}>
+                  {step.variables && step.variables[name] !== undefined ? String(step.variables[name]) : '-'}
+                </td>
               ))}
+              <td style={{ padding: '0.5rem', borderBottom: '1px solid #e5e7eb', fontFamily: 'monospace' }}>
+                {step.output || '-'}
+              </td>
             </tr>
           ))}
         </tbody>

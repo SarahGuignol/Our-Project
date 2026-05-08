@@ -8,7 +8,7 @@ const EditProfileModal = ({ user, onClose, onSave }) => {
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
-    bio: user?.bio || 'Computer Science student passionate about algorithms and problem solving.',
+    bio: user?.bio || '',
     photo: user?.photo || null
   });
   
@@ -79,19 +79,61 @@ const EditProfileModal = ({ user, onClose, onSave }) => {
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validateForm()) {
-      // Simulate API call
-      setTimeout(() => {
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (validateForm()) {
+    try {
+      const userId = user?.id;
+      
+      // 1. Mettre à jour le profil
+      const response = await fetch(`http://localhost:8000/api/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.newPassword || formData.currentPassword,
+          role: user.role,
+          bio: formData.bio
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // 2. Si une photo a été uploadée, la sauvegarder
+        if (formData.photo && formData.photo !== user?.photo) {
+          const photoResponse = await fetch(`http://localhost:8000/api/users/${userId}/photo`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ photo: formData.photo })
+          });
+          const photoData = await photoResponse.json();
+          if (photoData.success) {
+            data.user.photo = photoData.photo;
+          }
+        }
+        
         setSuccessMessage('Profile updated successfully!');
         setTimeout(() => {
-          onSave(formData);
+          // 3. Passer les données mises à jour au parent
+          onSave({
+            name: data.user.name,
+            email: data.user.email,
+            bio: data.user.bio,
+            photo: data.user.photo || formData.photo
+          });
           onClose();
         }, 1500);
-      }, 1000);
+      } else {
+        alert('Update failed: ' + (data.detail || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error updating profile: ' + error.message);
     }
-  };
+  }
+};
 
   return (
     <div style={{

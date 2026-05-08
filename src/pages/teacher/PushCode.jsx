@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CodeEditor from '../../components/CodeEditor';
 import OutputPanel from '../../components/OutputPanel';
-import { executePseudocode, analyzeComplexity, getAIHelp } from '../../utils/pseudocodeParser';
+import { api } from '../../services/api';
 
 const PushCode = () => {
   const { mode, id } = useParams();
@@ -30,16 +30,16 @@ const PushCode = () => {
     }
   }, [isExercise, exercise]);
 
-  const handleRunCode = () => {
-    const result = executePseudocode(code);
-    setOutput(result.output);
-    setVariables(result.variables || []);
-    
-    const complexityResult = analyzeComplexity(code);
-    setComplexity(complexityResult);
-    
-    const aiHelpResult = getAIHelp(code, result.output, result.variables);
-    setAiHelp(aiHelpResult);
+  const handleRunCode = async () => {
+    try {
+      const result = await api.analyzeCode(code);
+      setOutput(result.execution?.outputs?.join('\n') || 'No output');
+      setVariables(result.execution?.steps || []);
+      setComplexity(result.complexity?.big_o || 'N/A');
+      setAiHelp('Analysis complete.');
+    } catch (error) {
+      setOutput('Error: ' + error.message);
+    }
   };
 
   const handleSubmit = async () => {
@@ -51,13 +51,8 @@ const PushCode = () => {
     }, 1500);
   };
 
-  const toggleOutput = () => {
-    setShowOutput(!showOutput);
-  };
-
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
+  const toggleOutput = () => setShowOutput(!showOutput);
+  const toggleFullscreen = () => setIsFullscreen(!isFullscreen);
 
   return (
     <div style={{ 
@@ -71,7 +66,6 @@ const PushCode = () => {
       zIndex: isFullscreen ? 1000 : 'auto',
       background: isFullscreen ? '#f5f7fa' : 'transparent'
     }}>
-      {/* Header avec titre */}
       {isExercise && exercise && (
         <div className="card" style={{ marginBottom: '1rem' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>{exercise.title}</h2>
@@ -79,7 +73,6 @@ const PushCode = () => {
         </div>
       )}
 
-      {/* Layout */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: showOutput ? '1fr 1fr' : '1fr',
@@ -107,7 +100,6 @@ const PushCode = () => {
         )}
       </div>
 
-      {/* Submit button */}
       {isExercise && (
         <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
           <button

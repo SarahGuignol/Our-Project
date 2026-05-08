@@ -38,7 +38,7 @@ const Navbar = () => {
   const studentLinks = [
     { path: '/student/dashboard', label: 'Dashboard', icon: Home },
     { path: '/student/coding/free', label: 'Code Editor', icon: Code2 },
-      { path: '/student/browse', label: 'Browse Classes', icon: Search },
+    { path: '/student/browse', label: 'Browse Classes', icon: Search },
     { path: '/student/history', label: 'History', icon: BookOpen },
   ];
 
@@ -50,11 +50,11 @@ const Navbar = () => {
   ];
 
   const adminLinks = [
-    { path: '/admin/dashboard', label: 'Dash board', icon: Home },
+    { path: '/admin/dashboard', label: 'Dashboard', icon: Home },
     { path: '/admin/users', label: 'Users', icon: Users },
     { path: '/admin/classes', label: 'Classes', icon: BookOpen },
     { path: '/admin/analytics', label: 'Statistics', icon: BarChart3 },
-    { path: '/admin/settings', label: 'Setting', icon: Settings },
+    { path: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 
   const navLinks = user?.role === 'student' ? studentLinks :
@@ -126,7 +126,7 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Section utilisateur desktop */}
+          {/* Section utilisateur desktop - AVEC PHOTO */}
           <div className="desktop-user" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <div 
               onClick={() => setShowProfileModal(true)}
@@ -139,16 +139,26 @@ const Navbar = () => {
                 borderRadius: '0.5rem',
               }}
             >
+              {/* Avatar avec photo ou initiale */}
               <div style={{
                 width: '2rem',
                 height: '2rem',
-                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                background: user?.photo ? 'transparent' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                 borderRadius: '9999px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                overflow: 'hidden'
               }}>
-                <User size={16} color="white" />
+                {user?.photo ? (
+                  <img 
+                    src={user.photo} 
+                    alt={user.name} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
+                ) : (
+                  <User size={16} color="white" />
+                )}
               </div>
               <div>
                 <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#1f2937' }}>
@@ -204,7 +214,7 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Menu mobile */}
+      {/* Menu mobile - AVEC PHOTO */}
       {mobileMenuOpen && (
         <div className="mobile-menu" style={{
           position: 'fixed',
@@ -242,13 +252,22 @@ const Navbar = () => {
               <div style={{
                 width: '2rem',
                 height: '2rem',
-                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                background: user?.photo ? 'transparent' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                 borderRadius: '9999px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                overflow: 'hidden'
               }}>
-                <User size={16} color="white" />
+                {user?.photo ? (
+                  <img 
+                    src={user.photo} 
+                    alt={user.name} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
+                ) : (
+                  <User size={16} color="white" />
+                )}
               </div>
               <div>
                 <div style={{ fontWeight: '500' }}>{user?.name}</div>

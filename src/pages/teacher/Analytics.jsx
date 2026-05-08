@@ -2,127 +2,224 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { AlertTriangle, TrendingUp, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { api } from '../../services/api';
 
 const Analytics = () => {
   const { user } = useAuth();
   const [completionData, setCompletionData] = useState([]);
   const [strugglingStudents, setStrugglingStudents] = useState([]);
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    totalExercises: 0,
+    totalSubmissions: 0,
+    averageGrade: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadAnalyticsData();
   }, []);
 
-  const loadAnalyticsData = () => {
-    // Load all classes for this teacher
-    const savedClasses = localStorage.getItem('teacherClasses');
-    let teacherClasses = [];
-    
-    if (savedClasses) {
-      const allClasses = JSON.parse(savedClasses);
-      teacherClasses = allClasses.filter(c => c.teacherId === user?.id);
-    }
-
-    // Collect all exercises and submissions
-    const allExercises = [];
-    const allSubmissions = [];
-    const exerciseCompletion = [];
-
-    teacherClasses.forEach(cls => {
-      const savedExercises = localStorage.getItem(`exercises_${cls.id}`);
-      if (savedExercises) {
-        const exercises = JSON.parse(savedExercises);
+  const loadAnalyticsData = async () => {
+    setLoading(true);
+    try {
+      const classes = await api.getTeacherClasses(user?.id || 1);
+      
+      let allExercises = [];
+      let allSubmissions = [];
+      let studentIds = new Set();
+      let allGrades = [];
+      
+      // Map pour stocker les exercices problématiques par étudiant
+      const studentWorstExerciseMap = new Map();
+      
+      for (const cls of classes) {
+        const enrollments = await api.getEnrollmentsByClass(cls.id);
+        enrollments.forEach(e => studentIds.add(e.student_id));
         
-        exercises.forEach(ex => {
-          // For completion chart
-          const savedSubmissions = localStorage.getItem(`submissions_${ex.id}`);
-          let submissions = [];
-          if (savedSubmissions) {
-            submissions = JSON.parse(savedSubmissions);
-          }
+        const exercises = await api.getClassExercises(cls.id);
+        
+        for (const ex of exercises) {
+          const submissions = await api.getExerciseSubmissions(ex.id);
           
-          exerciseCompletion.push({
+          const gradedSubmissions = submissions.filter(s => s.grade !== null);
+          const avgGrade = gradedSubmissions.length > 0
+            ? Math.round(gradedSubmissions.reduce((sum, s) => sum + s.grade, 0) / gradedSubmissions.length)
+            : 0;
+          
+          allExercises.push({
             name: ex.title.length > 15 ? ex.title.substring(0, 12) + '...' : ex.title,
             completed: submissions.length,
-            total: cls.students || 0
+            total: enrollments.length,
+            avgGrade: avgGrade
           });
-
-          // For struggling students
-          submissions.forEach(sub => {
-            allSubmissions.push({
-              ...sub,
-              exerciseTitle: ex.title,
-              classId: cls.id
-            });
+          
+          allSubmissions.push(...submissions);
+          submissions.forEach(s => {
+            if (s.grade) allGrades.push(s.grade);
+            
+            // Tracker la pire note par étudiant
+            if (s.student_id && s.grade !== null && s.grade < 60) {
+              if (!studentWorstExerciseMap.has(s.student_id) || 
+                  s.grade < studentWorstExerciseMap.get(s.student_id).worstGrade) {
+                studentWorstExerciseMap.set(s.student_id, {
+                  worstGrade: s.grade,
+                  worstExerciseId: s.exercise_id,
+                  worstExerciseTitle: ex.title
+                });
+              }
+            }
           });
-        });
-
-        allExercises.push(...exercises);
+        }
       }
-    });
-
-    setCompletionData(exerciseCompletion);
-
-    // Calculate struggling students
-    const struggling = calculateStrugglingStudents(allSubmissions, allExercises);
-    setStrugglingStudents(struggling);
+      window.allSubmissionsData = allSubmissions;
+      // Calculer les étudiants en difficulté
+      const studentGradeMap = new Map();
+      for (const sub of allSubmissions) {
+        if (sub.student_id) {
+          if (!studentGradeMap.has(sub.student_id)) {
+            studentGradeMap.set(sub.student_id, { 
+              grades: [], 
+              name: `Student #${sub.student_id}`,
+              submissions: []
+            });
+          }
+          const studentData = studentGradeMap.get(sub.student_id);
+          studentData.submissions.push(sub);
+          if (sub.grade !== null) {
+            studentData.grades.push(sub.grade);
+          }
+        }
+      }
+      
+      // Récupérer les noms des étudiants
+      for (const [id, data] of studentGradeMap.entries()) {
+        try {
+          const userResponse = await fetch(`http://localhost:8000/api/users/${id}`);
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            data.name = userData.name || `Student #${id}`;
+          }
+        } catch (e) {
+          console.error('Error fetching user name:', e);
+        }
+      }
+      
+      // Filtrer les étudiants avec moyenne < 60 ou note < 50
+      const struggling = [];
+      for (const [id, data] of studentGradeMap.entries()) {
+        const avgGrade = data.grades.length > 0 
+          ? Math.round(data.grades.reduce((a, b) => a + b, 0) / data.grades.length) 
+          : 0;
+        
+        const hasLowGrade = data.grades.some(grade => grade < 60);
+        const worstInfo = studentWorstExerciseMap.get(id);
+        
+        if (avgGrade < 60 || hasLowGrade) {
+          struggling.push({
+            id: id,
+            name: data.name,
+            averageGrade: avgGrade,
+            submissionCount: data.submissions.length,
+            worstGrade: worstInfo?.worstGrade || 'N/A',
+            worstExerciseId: worstInfo?.worstExerciseId,
+            worstExerciseTitle: worstInfo?.worstExerciseTitle || 'Unknown'
+          });
+        }
+      }
+      
+      // Trier par moyenne croissante
+      struggling.sort((a, b) => a.averageGrade - b.averageGrade);
+      
+      setCompletionData(allExercises);
+      setStrugglingStudents(struggling);
+      setStats({
+        totalStudents: studentIds.size,
+        totalExercises: allExercises.length,
+        totalSubmissions: allSubmissions.length,
+        averageGrade: allGrades.length > 0 ? Math.round(allGrades.reduce((a, b) => a + b, 0) / allGrades.length) : 0
+      });
+      
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+    }
+    setLoading(false);
   };
 
-  const calculateStrugglingStudents = (submissions, exercises) => {
-    const studentMap = new Map();
-
-    submissions.forEach(sub => {
-      if (!studentMap.has(sub.name)) {
-        studentMap.set(sub.name, {
-          name: sub.name,
-          errors: 0,
-          submissions: 0,
-          grades: [],
-          complexityScore: 'N/A'
-        });
-      }
-
-      const student = studentMap.get(sub.name);
-      student.submissions++;
-
-      // Count "errors" based on low grades or missing submissions
-      if (sub.grade !== null && sub.grade !== undefined) {
-        student.grades.push(sub.grade);
-        if (sub.grade < 70) {
-          student.errors++;
+  const handleReviewWork = (student) => {
+  console.log("Student data:", student);
+  
+  // Chercher la soumission la plus récente de l'étudiant
+  const findExerciseId = async () => {
+    try {
+      // Récupérer toutes les soumissions de l'étudiant
+      const submissions = await api.getStudentSubmissions(student.id);
+      console.log("Student submissions:", submissions);
+      
+      if (submissions && submissions.length > 0) {
+        // Prendre la première soumission (ou celle avec la pire note)
+        const worstSubmission = submissions.reduce((worst, current) => {
+          if (!worst) return current;
+          const currentGrade = current.grade || 100;
+          const worstGrade = worst.grade || 100;
+          return currentGrade < worstGrade ? current : worst;
+        }, null);
+        
+        const exerciseId = worstSubmission?.exercise_id;
+        console.log("Found exercise ID:", exerciseId);
+        
+        if (exerciseId) {
+          navigate(`/teacher/submissions/${exerciseId}`);
+        } else {
+          alert("No exercise ID found for this student");
         }
       } else {
-        student.errors++; // No grade = considered as error/struggling
+        alert("No submissions found for this student");
       }
-
-      // Determine complexity score based on average grade
-      const avgGrade = student.grades.length > 0 
-        ? student.grades.reduce((a, b) => a + b, 0) / student.grades.length 
-        : 0;
-
-      if (avgGrade < 60) {
-        student.complexityScore = 'O(n²)';
-      } else if (avgGrade < 80) {
-        student.complexityScore = 'O(n log n)';
-      } else {
-        student.complexityScore = 'O(n)';
-      }
-    });
-
-    // Convert to array and filter only struggling students (with errors)
-    const students = Array.from(studentMap.values())
-      .filter(s => s.errors > 0)
-      .sort((a, b) => b.errors - a.errors)
-      .slice(0, 5); // Top 5 struggling students
-
-    return students;
+    } catch (error) {
+      console.error("Error finding exercise:", error);
+      alert("Error loading student submissions");
+    }
   };
+  
+  findExerciseId();
+};
+
+  if (loading) {
+    return (
+      <div className="container" style={{ padding: '2rem', textAlign: 'center' }}>
+        <p>Loading analytics...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container" style={{ padding: '2rem' }}>
       <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Analytics Dashboard</h1>
       <p style={{ color: '#6b7280', marginBottom: '2rem' }}>Track student progress and identify learning patterns</p>
 
-      {/* Charts */}
+      {/* Stats Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+        <div className="card" style={{ textAlign: 'center' }}>
+          <Users size={24} color="#3b82f6" style={{ marginBottom: '0.5rem' }} />
+          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalStudents}</div>
+          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Total Students</div>
+        </div>
+        <div className="card" style={{ textAlign: 'center' }}>
+          <TrendingUp size={24} color="#10b981" style={{ marginBottom: '0.5rem' }} />
+          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalExercises}</div>
+          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Total Exercises</div>
+        </div>
+        <div className="card" style={{ textAlign: 'center' }}>
+          <TrendingUp size={24} color="#f59e0b" style={{ marginBottom: '0.5rem' }} />
+          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.averageGrade}%</div>
+          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Average Grade</div>
+        </div>
+      </div>
+
+      {/* Chart */}
       {completionData.length > 0 ? (
         <div className="card" style={{ marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem' }}>Exercise Completion Rates</h2>
@@ -134,7 +231,7 @@ const Analytics = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="completed" fill="#3b82f6" name="Completed" />
+                <Bar dataKey="completed" fill="#3b82f6" name="Submissions" />
                 <Bar dataKey="total" fill="#9ca3af" name="Total Students" />
               </BarChart>
             </ResponsiveContainer>
@@ -159,19 +256,42 @@ const Analytics = () => {
               <thead>
                 <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
                   <th style={{ textAlign: 'left', padding: '0.75rem' }}>Student Name</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem' }}>Error Count</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem' }}>Complexity Score</th>
+                  <th style={{ textAlign: 'left', padding: '0.75rem' }}>Average Grade</th>
+                  <th style={{ textAlign: 'left', padding: '0.75rem' }}>Worst Grade</th>
+                  <th style={{ textAlign: 'left', padding: '0.75rem' }}>Submissions</th>
                   <th style={{ textAlign: 'left', padding: '0.75rem' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {strugglingStudents.map((student, index) => (
                   <tr key={index} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                    <td style={{ padding: '0.75rem' }}>{student.name}</td>
-                    <td style={{ padding: '0.75rem', color: '#ef4444', fontWeight: '600' }}>{student.errors}</td>
-                    <td style={{ padding: '0.75rem', fontFamily: 'monospace' }}>{student.complexityScore}</td>
+                    <td style={{ padding: '0.75rem', fontWeight: '500' }}>{student.name}</td>
                     <td style={{ padding: '0.75rem' }}>
-                      <button className="btn-secondary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }}>
+                      <span style={{ 
+                        color: student.averageGrade < 50 ? '#ef4444' : student.averageGrade < 70 ? '#f59e0b' : '#10b981',
+                        fontWeight: '600' 
+                      }}>
+                        {student.averageGrade}%
+                      </span>
+                    </td>
+                    <td style={{ padding: '0.75rem', color: '#ef4444', fontWeight: '600' }}>
+                      {student.worstGrade}%
+                    </td>
+                    <td style={{ padding: '0.75rem' }}>{student.submissionCount}</td>
+                    <td style={{ padding: '0.75rem' }}>
+                      <button 
+                        onClick={() => handleReviewWork(student)}
+                        className="btn-secondary" 
+                        style={{ 
+                          padding: '0.25rem 0.75rem', 
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          background: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '0.375rem'
+                        }}
+                      >
                         Review Work
                       </button>
                     </td>

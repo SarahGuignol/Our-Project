@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import CodeEditor from '../../components/CodeEditor';
 import OutputPanel from '../../components/OutputPanel';
-import { executePseudocode, analyzeComplexity, getAIHelp } from '../../utils/pseudocodeParser';
+import { api } from '../../services/api';  // api services
 import { Save, X, Edit2 } from 'lucide-react';
 
 const CodingScreen = () => {
   const { mode, id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [code, setCode] = useState('');
   const [output, setOutput] = useState('');
   const [complexity, setComplexity] = useState('');
@@ -15,186 +17,246 @@ const CodingScreen = () => {
   const [variables, setVariables] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showOutput, setShowOutput] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  
   const [hasRunOnce, setHasRunOnce] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [exerciseTitle, setExerciseTitle] = useState('');
   const [currentExerciseId, setCurrentExerciseId] = useState(null);
   const [isEditingExisting, setIsEditingExisting] = useState(false);
-  const [savedExercises, setSavedExercises] = useState(() => {
-    const saved = localStorage.getItem('freeExercises');
-    return saved ? JSON.parse(saved) : [];
-  });
-  
+  const [savedExercises, setSavedExercises] = useState([]);
+  const [aiFeedback, setAiFeedback] = useState(null);
+  const [hasPromptedSave, setHasPromptedSave] = useState(false);
+  const [exerciseDescription, setExerciseDescription] = useState('');
+  const [starterCode, setStarterCode] = useState(''); 
+
+
   const isExercise = mode === 'exercise';
-  
-  const [exercise] = useState(isExercise ? {
-    id: id,
-    title: 'Find Maximum Number',
-    description: 'Write a function that finds the maximum number in an array.',
-    starterCode: 'function findMax(numbers):\n    # Write your code here\n    return max'
-  } : null);
+  const isFreeMode = mode === 'free';
 
-  useEffect(() => {
-    if (isExercise && exercise?.starterCode) {
-      setCode(exercise.starterCode);
-    }
-  }, [isExercise, exercise]);
-
-  useEffect(() => {
-    if (mode === 'free' && id) {
-      const saved = localStorage.getItem('freeExercises');
-      if (saved) {
-        const exercises = JSON.parse(saved);
-        const loadedExercise = exercises.find(ex => ex.id === parseInt(id) || ex.id === id);
-        if (loadedExercise) {
-          setCode(loadedExercise.code);
-          setCurrentExerciseId(loadedExercise.id);
-          setExerciseTitle(loadedExercise.title);
-          setIsEditingExisting(true);
-          setHasRunOnce(true);
-        }
-      }
-    } else if (mode === 'free' && !id) {
-      const savedCode = localStorage.getItem('freeModeCode');
-      if (savedCode) {
-        setCode(savedCode);
-      }
-      setIsEditingExisting(false);
-      setCurrentExerciseId(null);
-      setExerciseTitle('');
-      setHasRunOnce(false);
-    }
-  }, [mode, id]);
-
-  useEffect(() => {
-    if (mode === 'free' && !id && code) {
-      localStorage.setItem('freeModeCode', code);
-    }
-  }, [code, mode, id]);
-
-  const handleRunCode = () => {
-    const result = executePseudocode(code);
-    setOutput(result.output);
-    setVariables(result.variables || []);
-    
-    const complexityResult = analyzeComplexity(code);
-    setComplexity(complexityResult);
-    
-    const aiHelpResult = getAIHelp(code, result.output, result.variables);
-    setAiHelp(aiHelpResult);
-
-    if (mode === 'free' && !id && !hasRunOnce && !isEditingExisting) {
-      setHasRunOnce(true);
-      setShowSaveDialog(true);
-    }
-    
-    if (currentExerciseId) {
-      updateExistingExercise({ lastRun: new Date().toISOString() });
-    }
-  };
-
-  const handleSaveExercise = () => {
-    if (!exerciseTitle.trim()) {
-      alert('Please enter a title for your exercise');
-      return;
-    }
-
-    const newExercise = {
-      id: Date.now(),
-      title: exerciseTitle,
-      code: code,
-      createdAt: new Date().toISOString(),
-      lastRun: new Date().toISOString(),
-      output: output,
-      complexity: complexity
-    };
-
-    const updatedExercises = [...savedExercises, newExercise];
-    setSavedExercises(updatedExercises);
-    localStorage.setItem('freeExercises', JSON.stringify(updatedExercises));
-    
-    setCurrentExerciseId(newExercise.id);
-    setIsEditingExisting(true);
-    setShowSaveDialog(false);
-    
-    navigate(`/student/coding/free/${newExercise.id}`, { replace: true });
-    
-    alert(`Exercise "${exerciseTitle}" saved successfully!`);
-  };
-
-  const handleUpdateExercise = () => {
-    const updatedExercises = savedExercises.map(ex => 
-      ex.id === currentExerciseId 
-        ? { 
-            ...ex, 
-            code: code, 
-            lastRun: new Date().toISOString(),
-            output: output,
-            complexity: complexity
-          }
-        : ex
-    );
-    
-    setSavedExercises(updatedExercises);
-    localStorage.setItem('freeExercises', JSON.stringify(updatedExercises));
-    
-    alert(`Exercise "${exerciseTitle}" updated successfully!`);
-  };
-
-  const updateExistingExercise = (updates) => {
-    const updatedExercises = savedExercises.map(ex => 
-      ex.id === currentExerciseId 
-        ? { ...ex, ...updates }
-        : ex
-    );
-    setSavedExercises(updatedExercises);
-    localStorage.setItem('freeExercises', JSON.stringify(updatedExercises));
-  };
-
-  const handleSkipSave = () => {
-    setShowSaveDialog(false);
-    setExerciseTitle('');
-  };
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    setTimeout(() => {
-      alert('Exercise submitted successfully!');
-      setIsSubmitting(false);
-      navigate('/student/dashboard');
-    }, 1500);
-  };
+  const [exercise] = useState(isExercise ? {} : null);
 
   const toggleOutput = () => {
     setShowOutput(!showOutput);
   };
 
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
+  useEffect(() => {
+    if (isFreeMode) {
+      loadSavedExercises();
+      if (id) {
+        loadExerciseById(id);
+      }
+    }
+  }, [isFreeMode, id]);
+
+  useEffect(() => {
+    if (isExercise && id) {
+      console.log("isExercise=true, id=", id);  // Debug
+      loadExerciseFromAPI(id);
+    }
+  }, [isExercise, id]);
+
+  useEffect(() => {
+    if (isExercise && id) {
+      loadExerciseData(id);
+    }
+  }, [isExercise, id]);
+
+  const loadExerciseData = async (exerciseId) => {
+    try {
+      const data = await api.getExercise(exerciseId);
+      if (data) {
+        setCode(data.starter_code || '# Write your code here\n');
+        setExerciseTitle(data.title);
+      }
+    } catch (error) {
+      console.log('Could not load exercise data');
+      if (exercise?.starterCode) {
+        setCode(exercise.starterCode);
+      }
+    }
+  };
+
+  const loadExerciseFromAPI = async (exerciseId) => {
+    console.log("Loading exercise ID:", exerciseId);  // Debug
+    try {
+      const exercise = await api.getExercise(parseInt(exerciseId));
+      console.log("Exercise loaded:", exercise);  // Debug
+      
+      if (exercise) {
+        // Set the starter code in the editor
+        const starterCodeText = exercise.starter_code || '# Write your code here\n';
+        console.log("Starter code:", starterCodeText);  // Debug
+        setCode(starterCodeText);
+        setExerciseTitle(exercise.title);
+        setExerciseDescription(exercise.description || '');
+        setStarterCode(exercise.starter_code || '');
+      } else {
+        console.log("Exercise not found");
+        setCode('# Exercise not found\n# Please contact your teacher');
+      }
+    } catch (error) {
+      console.error('Could not load exercise:', error);
+      setCode('# Error loading exercise\n# Please try again later');
+    }
+  };
+
+  const loadSavedExercises = async () => {
+    try {
+      const userId = user?.id || 1;
+      const data = await api.getFreeExercises(userId);
+      setSavedExercises(data);
+    } catch (error) {
+      console.log('Could not load saved exercises');
+    }
+  };
+
+  const loadExerciseById = async (exerciseId) => {
+    try {
+      const data = await api.getFreeExercises(user?.id || 1);
+      const exercise = data.find(ex => ex.id === parseInt(exerciseId) || ex.id === exerciseId);
+      if (exercise) {
+        setCode(exercise.code);
+        setExerciseTitle(exercise.title);
+        setCurrentExerciseId(exercise.id);
+        setIsEditingExisting(true);
+        setHasRunOnce(true);
+      }
+    } catch (error) {
+      console.log('Could not load exercise');
+    }
+  };
+
+  const handleSaveExercise = async () => {
+    if (!exerciseTitle.trim()) {
+      alert('Please enter a title');
+      return;
+    }
+
+    try {
+      const userId = user?.id || 1;
+      const result = await api.saveFreeExercise(userId, exerciseTitle, code);
+      
+      if (result.success) {
+        setCurrentExerciseId(result.id);
+        setIsEditingExisting(true);
+        setShowSaveDialog(false);
+        setHasPromptedSave(true);
+        await loadSavedExercises();
+        alert(`Exercise "${exerciseTitle}" saved!`);
+      } else {
+        alert('Failed to save');
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      alert('Error: ' + error.message);
+    }
+  };
+
+  const handleUpdateExercise = async () => {
+    try {
+      await api.updateFreeExercise(currentExerciseId, {
+        student_id: user?.id || 1,
+        title: exerciseTitle,
+        code: code
+      });
+      alert(`Exercise "${exerciseTitle}" updated!`);
+      await loadSavedExercises();
+    } catch (error) {
+      alert('Failed to update exercise');
+    }
+  };
+
+  const handleRunCode = async () => {
+    console.log("Running code:", code);
+    try {
+      const result = await api.analyzeCode(code);
+      
+      if (result.execution) {
+        setOutput(result.execution.outputs?.join('\n') || 'No output');
+        setVariables(result.execution.steps || []);
+      }
+      
+      if (result.complexity) {
+        setComplexity(result.complexity.big_o || 'N/A');
+      }
+      
+      let feedback = '';
+      if (result.complexity?.big_o) {
+        feedback += `Time Complexity: ${result.complexity.big_o}\n`;
+      }
+      if (result.variables?.undefined?.length > 0) {
+        feedback += `Undefined variables: ${result.variables.undefined.join(', ')}\n`;
+      }
+      if (!feedback) feedback = 'No issues detected.';
+      setAiHelp(feedback);
+
+      if (isFreeMode && !isEditingExisting && !hasPromptedSave) {
+        setHasPromptedSave(true);  
+        setShowSaveDialog(true);
+      }
+    } catch (error) {
+      console.error("Run error:", error);
+      setOutput(`❌ Syntax Error:\n${error.message}`);
+      setAiHelp("");
+    }
+  };
+
+  const handleAIFeedback = async () => {
+  try {
+    const result = await api.getAIFeedback(code);
+    // Format the AI response into a readable string for the AI Help tab
+    const helpText = `
+💡 Feedback: ${result.feedback}
+
+🔧 Suggestions:
+${result.suggestions.map(s => `• ${s}`).join('\n')}
+
+⚠️ Issues:
+${result.possible_issues.map(i => `• ${i}`).join('\n')}
+
+⏱️ Complexity: ${result.complexity_estimate}
+    `;
+    setAiHelp(helpText);
+    // Optional: switch to AI help tab if OutputPanel supports tabs
+  } catch (error) {
+    console.error('AI feedback failed:', error);
+    setAiHelp('AI service unavailable. Please try again later.');
+  }
+};
+
+  const handleSkipSave = () => {
+    setShowSaveDialog(false);
+    setHasPromptedSave(false); 
+  };
+
+  const handleSubmit = async () => {
+    if (!code.trim()) {
+      alert('Please write some code before submitting');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      console.log("Submitting exercise:", id, "student:", user?.id);
+      const result = await api.submitCode(parseInt(id), user?.id || 1, code);
+      console.log("Submit result:", result);
+      
+      if (result.success) {
+        alert('Exercise submitted successfully!');
+        navigate('/student/dashboard');
+      } else {
+        alert('Submission failed: ' + (result.detail || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Submit error:', error);
+      alert('Failed to submit: ' + error.message);
+    }
+    setIsSubmitting(false);
   };
 
   return (
-    <div style={{ 
-      height: 'calc(100vh - 64px)', 
-      padding: '1rem',
-      position: isFullscreen ? 'fixed' : 'relative',
-      top: isFullscreen ? 0 : 'auto',
-      left: isFullscreen ? 0 : 'auto',
-      right: isFullscreen ? 0 : 'auto',
-      bottom: isFullscreen ? 0 : 'auto',
-      zIndex: isFullscreen ? 1000 : 'auto',
-      background: isFullscreen ? '#f5f7fa' : 'transparent'
-    }}>
-      {isExercise && exercise && (
-        <div className="card" style={{ marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>{exercise.title}</h2>
-          <p style={{ color: '#6b7280' }}>{exercise.description}</p>
-        </div>
-      )}
-
-      {mode === 'free' && (
+    <div style={{ height: 'calc(100vh - 64px)', padding: '1rem' }}>
+      {/* Header for free mode */}
+      {isFreeMode && (
         <div className="card" style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
@@ -203,14 +265,8 @@ const CodingScreen = () => {
               </h2>
               {isEditingExisting && (
                 <span style={{
-                  background: '#eff6ff',
-                  color: '#3b82f6',
-                  padding: '0.125rem 0.5rem',
-                  borderRadius: '9999px',
-                  fontSize: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem'
+                  background: '#eff6ff', color: '#3b82f6', padding: '0.125rem 0.5rem',
+                  borderRadius: '9999px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem'
                 }}>
                   <Edit2 size={12} /> Editing
                 </span>
@@ -225,22 +281,11 @@ const CodingScreen = () => {
           </div>
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
             {isEditingExisting && (
-              <button
-                onClick={handleUpdateExercise}
-                style={{
-                  background: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.5rem',
-                  cursor: 'pointer',
-                  fontWeight: '500',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  fontSize: '0.875rem'
-                }}
-              >
+              <button onClick={handleUpdateExercise} style={{
+                background: '#10b981', color: 'white', border: 'none', padding: '0.5rem 1rem',
+                borderRadius: '0.5rem', cursor: 'pointer', fontWeight: '500',
+                display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem'
+              }}>
                 <Save size={16} /> Update Exercise
               </button>
             )}
@@ -251,127 +296,71 @@ const CodingScreen = () => {
         </div>
       )}
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: showOutput ? '1fr 1fr' : '1fr',
-        gap: '1rem',
-        height: mode === 'free' && isEditingExisting ? 'calc(100% - 140px)' : 'calc(100% - 100px)',
-        transition: 'all 0.3s ease'
-      }}>
+      {isExercise && exerciseDescription && (
+        <div className="card" style={{ marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+            📝 Description
+          </h3>
+          <p style={{ color: '#4b5563', fontSize: '0.875rem', lineHeight: '1.5' }}>
+            {exerciseDescription}
+          </p>
+          {starterCode && (
+            <div style={{ marginTop: '0.75rem' }}>
+              <h4 style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>
+                Starter Code:
+              </h4>
+              <pre style={{
+                background: '#1e1e1e',
+                color: '#d4d4d4',
+                padding: '0.5rem',
+                borderRadius: '0.375rem',
+                fontSize: '0.75rem',
+                overflow: 'auto'
+              }}>
+                {starterCode}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: showOutput ? '1fr 1fr' : '1fr', gap: '1rem', height: isFreeMode ? 'calc(100% - 140px)' : 'calc(100% - 100px)' }}>
         <CodeEditor 
           code={code} 
           setCode={setCode} 
           onRun={handleRunCode}
           onToggleOutput={toggleOutput}
           showOutput={showOutput}
-          onToggleFullscreen={toggleFullscreen}
-          isFullscreen={isFullscreen}
-        />
-        
-        {showOutput && (
-          <OutputPanel
-            output={output}
-            complexity={complexity}
-            aiHelp={aiHelp}
-            variables={variables}
-          />
-        )}
+          onAIHelp={handleAIFeedback}
+        />        
+        {showOutput && <OutputPanel output={output} complexity={complexity} aiHelp={aiHelp} variables={variables} />}
       </div>
 
+      {/* Submit button - visible for class exercises */}
       {isExercise && (
         <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
+          <button onClick={handleSubmit} disabled={isSubmitting}
             className="btn-primary"
-            style={{
-              background: '#10b981',
-              padding: '0.75rem 2rem',
-              opacity: isSubmitting ? 0.5 : 1,
-            }}
-          >
+            style={{ background: '#10b981', padding: '0.75rem 2rem', opacity: isSubmitting ? 0.5 : 1 }}>
             {isSubmitting ? 'Submitting...' : 'Submit Exercise'}
           </button>
         </div>
       )}
 
-      {showSaveDialog && !isEditingExisting && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1001,
-        }}>
-          <div className="card" style={{ width: '450px', maxWidth: '90%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Save size={20} color="#3b82f6" />
-                Save Your Exercise
-              </h2>
-              <button 
-                onClick={handleSkipSave}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }}
-              >
-                <X size={20} color="#9ca3af" />
-              </button>
-            </div>
-            
-            <p style={{ color: '#6b7280', marginBottom: '1rem', fontSize: '0.875rem' }}>
-              Great work! Would you like to save this exercise? Give it a title to easily find it later.
-            </p>
-            
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                Exercise Title
-              </label>
-              <input
-                type="text"
-                value={exerciseTitle}
-                onChange={(e) => setExerciseTitle(e.target.value)}
-                placeholder="e.g., My Bubble Sort Algorithm"
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '0.5rem',
-                  fontSize: '1rem',
-                  outline: 'none'
-                }}
-                autoFocus
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSaveExercise();
-                  }
-                }}
-              />
-            </div>
-            
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-              <button
-                onClick={handleSkipSave}
-                className="btn-secondary"
-                style={{ padding: '0.5rem 1rem' }}
-              >
-                Skip for Now
-              </button>
-              <button
-                onClick={handleSaveExercise}
-                className="btn-primary"
-                style={{ 
-                  padding: '0.5rem 1.5rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                <Save size={16} /> Save Exercise
-              </button>
+      {showSaveDialog && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001 }}>
+          <div className="card" style={{ width: '400px', padding: '1.5rem' }}>
+            <h2>Save Exercise</h2>
+            <input
+              type="text"
+              value={exerciseTitle}
+              onChange={(e) => setExerciseTitle(e.target.value)}
+              placeholder="Exercise title"
+              style={{ width: '100%', padding: '0.5rem', margin: '1rem 0' }}
+            />
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+              <button onClick={handleSkipSave} className="btn-secondary">Skip</button>
+              <button onClick={handleSaveExercise} className="btn-primary">Save</button>
             </div>
           </div>
         </div>

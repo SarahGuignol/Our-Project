@@ -17,8 +17,8 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const [loading, setLoading] = useState(false);
 
-  // Validation des champs
   const validateName = (name) => {
     if (!name) return 'Name is required';
     if (name.length < 2) return 'Name must be at least 2 characters';
@@ -33,11 +33,32 @@ const Signup = () => {
   };
 
   const validatePassword = (password) => {
-    if (!password) return 'Password is required';
-    if (password.length < 8) return 'Password must be at least 8 characters';
-    if (!/[A-Z]/.test(password)) return 'Password must contain at least one uppercase letter';
-    if (!/[a-z]/.test(password)) return 'Password must contain at least one lowercase letter';
-    if (!/[0-9]/.test(password)) return 'Password must contain at least one number';
+    if (!password) {
+      return 'Password is required';
+    }
+    
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters long';
+    }
+    
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    if (!hasUpperCase) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!hasLowerCase) {
+      return 'Password must contain at least one lowercase letter';
+    }
+    if (!hasNumbers) {
+      return 'Password must contain at least one number';
+    }
+    if (!hasSpecialChar) {
+      return 'Password must contain at least one special character (!@#$%^&*)';
+    }
+    
     return '';
   };
 
@@ -51,7 +72,6 @@ const Signup = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Validation en temps réel
     let error = '';
     if (name === 'name') error = validateName(value);
     if (name === 'email') error = validateEmail(value);
@@ -65,37 +85,6 @@ const Signup = () => {
     setTouched(prev => ({ ...prev, [field]: true }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    const nameError = validateName(formData.name);
-    const emailError = validateEmail(formData.email);
-    const passwordError = validatePassword(formData.password);
-    const confirmError = validateConfirmPassword(formData.confirmPassword, formData.password);
-    
-    const newErrors = {
-        name: nameError,
-        email: emailError,
-        password: passwordError,
-        confirmPassword: confirmError
-    };
-    
-    setErrors(newErrors);
-    setTouched({ name: true, email: true, password: true, confirmPassword: true });
-    
-    if (!nameError && !emailError && !passwordError && !confirmError) {
-    signup({
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        role: formData.role,
-        bio: formData.role === 'teacher' 
-        ? 'Experienced computer science educator passionate about teaching.'
-        : 'Computer Science student passionate about algorithms.',
-    });
-    
-    navigate(formData.role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard');
-    }
-   };
   const getFieldStatus = (field) => {
     if (!touched[field]) return null;
     if (errors[field]) return 'error';
@@ -103,12 +92,40 @@ const Signup = () => {
     return null;
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    const nameError = validateName(formData.name);
+    const emailError = validateEmail(formData.email);
+    const passwordError = validatePassword(formData.password);
+    const confirmError = validateConfirmPassword(formData.confirmPassword, formData.password);
+    
+    if (!nameError && !emailError && !passwordError && !confirmError) {
+      setLoading(true);
+      
+      try {
+        await signup({
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          password: formData.password,
+          role: formData.role,
+          bio: formData.bio || 'Computer Science student passionate about algorithms.' 
+        });
+        
+        navigate(formData.role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard');
+      } catch (error) {
+        alert(error.message || 'Signup failed. This email may already be registered.');
+      }
+      
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #3b82f6 0%, #ffffff 100%)',
     }}>
-      {/* Navigation simplifiée */}
       <nav style={{
         padding: '1rem 2rem',
         display: 'flex',
@@ -120,27 +137,17 @@ const Signup = () => {
       }}>
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
           <div style={{
-            width: '2rem',
-            height: '2rem',
-            background: 'white',
-            borderRadius: '0.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
+            width: '2rem', height: '2rem', background: 'white',
+            borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}>
             <Code2 size={20} color="#3b82f6" />
           </div>
-          <span style={{ color: 'white', fontWeight: '600', fontSize: '1.125rem' }}>Algorithm Analyser & Debugger</span>
+          <span style={{ color: 'white', fontWeight: '600', fontSize: '1.125rem' }}>CodeLearn</span>
         </Link>
         
         <Link to="/" style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          color: 'white',
-          textDecoration: 'none',
-          padding: '0.5rem 1rem',
-          borderRadius: '0.5rem',
+          display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'white',
+          textDecoration: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem',
           background: 'rgba(255,255,255,0.2)'
         }}>
           <ArrowLeft size={18} />
@@ -148,13 +155,9 @@ const Signup = () => {
         </Link>
       </nav>
 
-      {/* Formulaire d'inscription */}
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 'calc(100vh - 80px)',
-        padding: '2rem'
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        minHeight: 'calc(100vh - 80px)', padding: '2rem'
       }}>
         <div className="card" style={{ width: '500px', maxWidth: '100%', padding: '2rem' }}>
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
@@ -162,63 +165,40 @@ const Signup = () => {
               <Code2 size={48} color="#3b82f6" />
             </div>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Create Account</h1>
-            <p style={{ color: '#6b7280' }}>Join Algorithm Analyser & Debugger to start learning</p>
+            <p style={{ color: '#6b7280' }}>Join CodeLearn to start learning</p>
           </div>
 
           <form onSubmit={handleSubmit}>
-            {/* Rôle */}
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>I am a...</label>
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="role"
-                    value="student"
-                    checked={formData.role === 'student'}
-                    onChange={handleChange}
-                  />
+                  <input type="radio" name="role" value="student"
+                    checked={formData.role === 'student'} onChange={handleChange} />
                   Student
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="role"
-                    value="teacher"
-                    checked={formData.role === 'teacher'}
-                    onChange={handleChange}
-                  />
+                  <input type="radio" name="role" value="teacher"
+                    checked={formData.role === 'teacher'} onChange={handleChange} />
                   Teacher
                 </label>
               </div>
             </div>
 
-            {/* Nom complet */}
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
                 <User size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
                 Full Name *
               </label>
               <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur('name')}
+                <input type="text" name="name" value={formData.name}
+                  onChange={handleChange} onBlur={() => handleBlur('name')}
                   placeholder="John Doe"
                   style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: `2px solid ${
-                      getFieldStatus('name') === 'error' ? '#ef4444' :
-                      getFieldStatus('name') === 'success' ? '#10b981' : '#d1d5db'
-                    }`,
-                    borderRadius: '0.5rem',
-                    outline: 'none',
-                    fontSize: '1rem'
-                  }}
-                />
+                    width: '100%', padding: '0.75rem',
+                    border: `2px solid ${getFieldStatus('name') === 'error' ? '#ef4444' : getFieldStatus('name') === 'success' ? '#10b981' : '#d1d5db'}`,
+                    borderRadius: '0.5rem', outline: 'none', fontSize: '1rem'
+                  }} />
                 {getFieldStatus('name') === 'success' && (
                   <CheckCircle size={18} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#10b981' }} />
                 )}
@@ -228,32 +208,20 @@ const Signup = () => {
               )}
             </div>
 
-            {/* Email */}
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
                 <Mail size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
                 Email *
               </label>
               <div style={{ position: 'relative' }}>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur('email')}
+                <input type="email" name="email" value={formData.email}
+                  onChange={handleChange} onBlur={() => handleBlur('email')}
                   placeholder="you@example.com"
                   style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: `2px solid ${
-                      getFieldStatus('email') === 'error' ? '#ef4444' :
-                      getFieldStatus('email') === 'success' ? '#10b981' : '#d1d5db'
-                    }`,
-                    borderRadius: '0.5rem',
-                    outline: 'none',
-                    fontSize: '1rem'
-                  }}
-                />
+                    width: '100%', padding: '0.75rem',
+                    border: `2px solid ${getFieldStatus('email') === 'error' ? '#ef4444' : getFieldStatus('email') === 'success' ? '#10b981' : '#d1d5db'}`,
+                    borderRadius: '0.5rem', outline: 'none', fontSize: '1rem'
+                  }} />
                 {getFieldStatus('email') === 'success' && (
                   <CheckCircle size={18} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#10b981' }} />
                 )}
@@ -263,46 +231,22 @@ const Signup = () => {
               )}
             </div>
 
-            {/* Mot de passe */}
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
                 <Lock size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
                 Password *
               </label>
               <div style={{ position: 'relative' }}>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur('password')}
+                <input type={showPassword ? 'text' : 'password'} name="password"
+                  value={formData.password} onChange={handleChange} onBlur={() => handleBlur('password')}
                   placeholder="Create a password"
                   style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    paddingRight: '2.5rem',
-                    border: `2px solid ${
-                      getFieldStatus('password') === 'error' ? '#ef4444' :
-                      getFieldStatus('password') === 'success' ? '#10b981' : '#d1d5db'
-                    }`,
-                    borderRadius: '0.5rem',
-                    outline: 'none',
-                    fontSize: '1rem'
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '0.75rem',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
+                    width: '100%', padding: '0.75rem', paddingRight: '2.5rem',
+                    border: `2px solid ${getFieldStatus('password') === 'error' ? '#ef4444' : getFieldStatus('password') === 'success' ? '#10b981' : '#d1d5db'}`,
+                    borderRadius: '0.5rem', outline: 'none', fontSize: '1rem'
+                  }} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer' }}>
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
@@ -311,46 +255,22 @@ const Signup = () => {
               )}
             </div>
 
-            {/* Confirmer mot de passe */}
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
                 <Lock size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
                 Confirm Password *
               </label>
               <div style={{ position: 'relative' }}>
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur('confirmPassword')}
+                <input type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword"
+                  value={formData.confirmPassword} onChange={handleChange} onBlur={() => handleBlur('confirmPassword')}
                   placeholder="Confirm your password"
                   style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    paddingRight: '2.5rem',
-                    border: `2px solid ${
-                      getFieldStatus('confirmPassword') === 'error' ? '#ef4444' :
-                      getFieldStatus('confirmPassword') === 'success' ? '#10b981' : '#d1d5db'
-                    }`,
-                    borderRadius: '0.5rem',
-                    outline: 'none',
-                    fontSize: '1rem'
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '0.75rem',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
+                    width: '100%', padding: '0.75rem', paddingRight: '2.5rem',
+                    border: `2px solid ${getFieldStatus('confirmPassword') === 'error' ? '#ef4444' : getFieldStatus('confirmPassword') === 'success' ? '#10b981' : '#d1d5db'}`,
+                    borderRadius: '0.5rem', outline: 'none', fontSize: '1rem'
+                  }} />
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer' }}>
                   {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
@@ -359,26 +279,15 @@ const Signup = () => {
               )}
             </div>
 
-            {/* Bouton d'inscription */}
-            <button
-              type="submit"
-              className="btn-primary"
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                fontSize: '1rem',
-                marginBottom: '1rem'
-              }}
-            >
-              Create Account
+            <button type="submit" className="btn-primary"
+              disabled={loading}
+              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', marginBottom: '1rem', opacity: loading ? 0.5 : 1 }}>
+              {loading ? 'Creating Account...' : 'Create Account'}
             </button>
 
-            {/* Lien vers login */}
             <div style={{ textAlign: 'center', fontSize: '0.875rem', color: '#6b7280' }}>
               Already have an account?{' '}
-              <Link to="/login" style={{ color: '#3b82f6', textDecoration: 'none' }}>
-                Sign In
-              </Link>
+              <Link to="/login" style={{ color: '#3b82f6', textDecoration: 'none' }}>Sign In</Link>
             </div>
           </form>
         </div>

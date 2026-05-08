@@ -1,87 +1,121 @@
 import React, { useState, useEffect } from 'react';
-import { X, Mail, Calendar, Award, BookOpen, TrendingUp, Edit2, User, Users } from 'lucide-react';
-import { calculateStudentStats, initializeMockData } from '../data/mockData';
+import { X, Mail, Calendar, Award, BookOpen, Edit2, User, Users, Camera } from 'lucide-react';
+import { api } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const ProfileModal = ({ user, onClose, onEdit }) => {
+  const { updateUserPhoto } = useAuth();
   const [stats, setStats] = useState({
     totalExercises: 0,
     completedExercises: 0,
     averageGrade: 0,
-    totalHours: 0,
     enrolledClasses: 0,
-    joinDate: '',
-    location: 'San Francisco, CA'
+    totalStudents: 0,
+    totalClasses: 0,
+    joinDate: ''
   });
+  
+  const [loading, setLoading] = useState(true);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState(user?.photo || null);
 
   useEffect(() => {
-    initializeMockData();
-    
-    if (user?.role === 'student') {
-      const studentStats = calculateStudentStats(user);
-      setStats(studentStats);
-    } else if (user?.role === 'teacher') {
-      calculateTeacherStats();
-    } else if (user?.role === 'admin') {
-      calculateAdminStats();
+    loadStatsFromAPI();
+    if (user?.photo) {
+      setPhotoPreview(user.photo);
     }
+    loadUserJoinDate();
   }, [user]);
 
-  const calculateTeacherStats = () => {
-    // Load from teacherClasses in localStorage
-    const savedClasses = localStorage.getItem('teacherClasses');
-    let teacherClasses = [];
-    
-    if (savedClasses) {
-      const allClasses = JSON.parse(savedClasses);
-      teacherClasses = allClasses.filter(c => c.teacherId === user?.id);
-    }
-    
-    // If no classes, use mock data
-    if (teacherClasses.length === 0) {
-      teacherClasses = [
-        { id: 1, name: 'CS101 - Programming Fundamentals', students: 25 },
-        { id: 2, name: 'CS201 - Data Structures', students: 20 }
-      ];
-    }
-    
-    // Calculate total exercises
-    let totalExercises = 0;
-    teacherClasses.forEach(cls => {
-      const savedExercises = localStorage.getItem(`exercises_${cls.id}`);
-      if (savedExercises) {
-        totalExercises += JSON.parse(savedExercises).length;
+  const loadStatsFromAPI = async () => {
+    setLoading(true);
+    try {
+      if (user?.role === 'student') {
+        const enrollments = await api.getStudentEnrollments(user.id);
+        const submissions = await api.getStudentSubmissions(user.id);
+        
+        const completedExercises = submissions.filter(s => s.grade !== null).length;
+        const gradedSubmissions = submissions.filter(s => s.grade !== null);
+        const averageGrade = gradedSubmissions.length > 0
+          ? Math.round(gradedSubmissions.reduce((sum, s) => sum + (s.grade || 0), 0) / gradedSubmissions.length)
+          : 0;
+        
+        setStats({
+          enrolledClasses: enrollments.length,
+          totalExercises: submissions.length,
+          completedExercises: completedExercises,
+          averageGrade: averageGrade,
+          joinDate: user?.joinDate || new Date().toISOString().split('T')[0]
+        });
+      } else if (user?.role === 'teacher') {
+        const classes = await api.getTeacherClasses(user.id);
+        let allStudents = new Set();
+        let totalExercises = 0;
+        
+        for (const cls of classes) {
+          const enrollments = await api.getEnrollmentsByClass(cls.id);
+          enrollments.forEach(e => allStudents.add(e.student_id));
+          const exercises = await api.getClassExercises(cls.id);
+          totalExercises += exercises.length;
+        }
+        
+        setStats({
+          totalClasses: classes.length,
+          totalStudents: allStudents.size,
+          totalExercises: totalExercises,
+          joinDate: user?.joinDate || new Date().toISOString().split('T')[0]
+        });
+      } else if (user?.role === 'admin') {
+        const users = await api.getUsers();
+        const classes = await api.getClasses();
+        
+        setStats({
+          totalUsers: users.length,
+          totalStudents: users.filter(u => u.role === 'student').length,
+          totalTeachers: users.filter(u => u.role === 'teacher').length,
+          totalClasses: classes.length,
+          joinDate: user?.joinDate || new Date().toISOString().split('T')[0]
+        });
       }
-    });
-    
-    const totalStudents = teacherClasses.reduce((sum, cls) => sum + (cls.students || 0), 0);
-    
-    setStats({
-      totalClasses: teacherClasses.length,
-      totalStudents: totalStudents,
-      totalExercises: totalExercises,
-      averageGrade: 0,
-      totalHours: teacherClasses.length * 45,
-      joinDate: user?.joinDate || new Date().toISOString().split('T')[0],
-      location: 'Faculty Office'
-    });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+    setLoading(false);
   };
 
-  const calculateAdminStats = () => {
-    const allUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
-    const teacherClasses = JSON.parse(localStorage.getItem('teacherClasses') || '[]');
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
     
-    const totalStudents = allUsers.filter(u => u.role === 'student').length;
-    const totalTeachers = allUsers.filter(u => u.role === 'teacher').length;
+    setUploadingPhoto(true);
     
-    setStats({
-      totalUsers: allUsers.length,
-      totalStudents: totalStudents,
-      totalTeachers: totalTeachers,
-      totalClasses: teacherClasses.length,
-      joinDate: user?.joinDate || new Date().toISOString().split('T')[0],
-      location: 'Admin Office'
-    });
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Photo = reader.result;
+      setPhotoPreview(base64Photo);
+      
+      const success = await updateUserPhoto(base64Photo);
+      if (success && onEdit) {
+        onEdit({ ...user, photo: base64Photo });
+      }
+      setUploadingPhoto(false);
+    };
+    reader.readAsDataURL(file);
   };
+
+  const loadUserJoinDate = async () => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/users/${user.id}`);
+      const data = await response.json();
+      if (data.join_date) {
+        setJoinDate(data.join_date.split(' ')[0]);
+      }
+    } catch (error) {
+      console.error('Error loading join date:', error);
+    }
+  };
+
+  const [joinDate, setJoinDate] = useState(null);
 
   if (!user) return null;
 
@@ -108,6 +142,7 @@ const ProfileModal = ({ user, onClose, onEdit }) => {
         position: 'relative'
       }} onClick={(e) => e.stopPropagation()}>
         
+        {/* Header avec photo */}
         <div style={{
           background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
           padding: '2rem',
@@ -130,101 +165,81 @@ const ProfileModal = ({ user, onClose, onEdit }) => {
             <X size={20} />
           </button>
           
-          <div style={{
-            width: '80px',
-            height: '80px',
-            background: user?.photo ? `url(${user.photo}) center/cover` : 'white',
-            borderRadius: '50%',
-            margin: '0 auto 1rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '2rem',
-            fontWeight: 'bold',
-            color: '#3b82f6'
-          }}>
-            {!user?.photo && (user.name?.charAt(0) || 'U')}
+          {/* Photo de profil */}
+          <div style={{ position: 'relative', display: 'inline-block' }}>
+            <div style={{
+              width: '100px',
+              height: '100px',
+              background: photoPreview ? `url(${photoPreview}) center/cover` : 'white',
+              borderRadius: '50%',
+              margin: '0 auto 1rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2rem',
+              fontWeight: 'bold',
+              color: '#3b82f6',
+              border: '3px solid white',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              {!photoPreview && (user.name?.charAt(0) || 'U')}
+            </div>
+          
           </div>
+          
+          {uploadingPhoto && (
+            <p style={{ color: 'white', fontSize: '0.75rem', marginTop: '0.5rem' }}>Uploading...</p>
+          )}
           
           <h2 style={{ color: 'white', marginBottom: '0.25rem' }}>{user.name}</h2>
           <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.875rem' }}>
             {user.role === 'teacher' ? 'Teacher' : user.role === 'admin' ? 'Administrator' : 'Student'}
-            {stats.joinDate && ` • Member since ${stats.joinDate}`}
+            {joinDate && ` • Member since ${joinDate}`}
           </p>
         </div>
 
         <div style={{ padding: '1.5rem' }}>
-          {user.role === 'student' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
-                <Users size={24} color="#8b5cf6" style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.enrolledClasses}</div>
-                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Enrolled Classes</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
-                <BookOpen size={24} color="#3b82f6" style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.completedExercises}/{stats.totalExercises}</div>
-                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Exercises Done</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
-                <Award size={24} color="#f59e0b" style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.averageGrade}%</div>
-                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Average Grade</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
-                <TrendingUp size={24} color="#10b981" style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalHours}h</div>
-                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Hours Coded</div>
-              </div>
-            </div>
-          ) : user.role === 'teacher' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
-                <BookOpen size={24} color="#3b82f6" style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalClasses || 0}</div>
-                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Classes</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
-                <Users size={24} color="#8b5cf6" style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalStudents || 0}</div>
-                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Students</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
-                <Award size={24} color="#f59e0b" style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalExercises || 0}</div>
-                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Exercises</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
-                <TrendingUp size={24} color="#10b981" style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.averageGrade || 0}%</div>
-                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Avg Grade</div>
-              </div>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
-                <Users size={24} color="#3b82f6" style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalUsers || 0}</div>
-                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Total Users</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
-                <Users size={24} color="#10b981" style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalStudents || 0}</div>
-                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Students</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
-                <Users size={24} color="#f59e0b" style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalTeachers || 0}</div>
-                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Teachers</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
-                <BookOpen size={24} color="#8b5cf6" style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalClasses || 0}</div>
-                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Classes</div>
-              </div>
+          {/* Stats */}
+          {!loading && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              {user.role === 'student' && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                  <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                    <Users size={24} color="#8b5cf6" style={{ marginBottom: '0.5rem' }} />
+                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.enrolledClasses || 0}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Classes</div>
+                  </div>
+                  <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                    <BookOpen size={24} color="#3b82f6" style={{ marginBottom: '0.5rem' }} />
+                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.completedExercises || 0}/{stats.totalExercises || 0}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Exercises</div>
+                  </div>
+                  <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                    <Award size={24} color="#f59e0b" style={{ marginBottom: '0.5rem' }} />
+                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.averageGrade || 0}%</div>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Average Grade</div>
+                  </div>
+                </div>
+              )}
+              
+              {user.role === 'teacher' && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                  <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                    <BookOpen size={24} color="#3b82f6" />
+                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalClasses || 0}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Classes</div>
+                  </div>
+                  <div style={{ textAlign: 'center', padding: '1rem', background: '#f3f4f6', borderRadius: '0.5rem' }}>
+                    <Users size={24} color="#8b5cf6" />
+                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalStudents || 0}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Students</div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
+          {/* Infos */}
           <div style={{ marginBottom: '1.5rem' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.75rem' }}>Information</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -236,10 +251,10 @@ const ProfileModal = ({ user, onClose, onEdit }) => {
                 <Mail size={16} />
                 <span>{user.email}</span>
               </div>
-              {stats.joinDate && (
+              {joinDate && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.875rem' }}>
                   <Calendar size={16} />
-                  <span>Joined {stats.joinDate}</span>
+                  <span>Joined {joinDate}</span>
                 </div>
               )}
             </div>
